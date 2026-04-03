@@ -44,11 +44,11 @@ function rehypeMarkBlockCode() {
 
 // rehype-slug runs first so headings get their id attributes, then
 // rehypeMarkBlockCode stamps data-block on fenced code elements.
-const rehypePlugins = [rehypeSlug, rehypeMarkBlockCode] as const
+const rehypePlugins = [rehypeSlug, rehypeMarkBlockCode]
 
 // remark-directive must run before remarkDirectiveWidgets so that
 // :::name{} syntax is parsed into containerDirective AST nodes first.
-const remarkPlugins = [remarkGfm, remarkDirective, remarkDirectiveWidgets] as const
+const remarkPlugins = [remarkGfm, remarkDirective, remarkDirectiveWidgets]
 
 const components: Components = {
   // ── Headings with anchor IDs ──────────────────────────────────
