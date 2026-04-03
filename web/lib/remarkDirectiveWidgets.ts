@@ -144,7 +144,7 @@ function parseQuiz(children: DirectiveNode[], attrs: DirectiveAttributes): QuizC
 export function remarkDirectiveWidgets() {
   return (tree: Root) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    visit(tree, (node: DirectiveNode, index: number | null, parent: any) => {
+    visit(tree, (node: DirectiveNode, index: number | undefined, parent: any) => {
       if (node.type !== "containerDirective") return
 
       const type  = node.name as string
@@ -174,7 +174,7 @@ export function remarkDirectiveWidgets() {
           value: JSON.stringify(config),
         }
         parent.children.splice(index, 1, codeNode)
-        return [SKIP, index] as [symbol, number]
+        return [SKIP, index]
       }
     })
   }
