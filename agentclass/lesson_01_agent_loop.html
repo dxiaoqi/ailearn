@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 01 · Agent Loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f0f0d;
+  --ink2: #4a4a44;
+  --ink3: #8a8a82;
+  --paper: #faf9f6;
+  --surface: #f2f0eb;
+  --border: rgba(15,15,13,.10);
+  --border-mid: rgba(15,15,13,.18);
+  --accent: #2a52d4;
+  --accent-bg: #eef1fd;
+  --accent-border: #b3c0f0;
+  --loop: #1a9e72;
+  --loop-bg: #e3f5ee;
+  --loop-border: #7dd4b8;
+  --warn: #c45c1a;
+  --warn-bg: #fdeee3;
+  --warn-border: #f0b088;
+  --good: #2e7d32;
+  --good-bg: #edf5e8;
+  --good-border: #a0cc88;
+  --bad: #c42a1a;
+  --bad-bg: #fde8e3;
+  --bad-border: #f0a088;
+  --r4: 4px; --r8: 8px; --r12: 12px; --r16: 16px;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+
+body { font-family: var(--sans); background: var(--paper); color: var(--ink); line-height: 1; }
+
+/* ── LESSON SHELL ── */
+.lesson { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── TOP NAV ── */
+.lesson-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(250,249,246,.94);
+  backdrop-filter: blur(16px);
+  border-bottom: .5px solid var(--border);
+  padding: 0 24px;
+  display: flex; align-items: center; gap: 0; height: 48px;
+}
+.nav-logo { font-size: 11px; font-weight: 500; color: var(--ink3); letter-spacing: .06em; text-transform: uppercase; margin-right: 20px; white-space: nowrap; }
+.nav-steps { display: flex; gap: 0; flex: 1; overflow-x: auto; scrollbar-width: none; }
+.nav-steps::-webkit-scrollbar { display: none; }
+.nav-step {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 12px; height: 48px; font-size: 11px; font-weight: 500;
+  color: var(--ink3); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all .15s; white-space: nowrap; user-select: none;
+}
+.nav-step:hover { color: var(--ink2); }
+.nav-step.active { color: var(--accent); border-bottom-color: var(--accent); }
+.nav-step.done { color: var(--loop); }
+.nav-step .ns-dot {
+  width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 9px; font-weight: 500; flex-shrink: 0;
+  background: var(--surface); border: .5px solid var(--border-mid); color: var(--ink3);
+}
+.nav-step.active .ns-dot { background: var(--accent); color: #fff; border-color: transparent; }
+.nav-step.done .ns-dot { background: var(--loop-bg); color: var(--loop); border-color: var(--loop-border); }
+.nav-progress { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink3); padding-left: 12px; }
+.prog-bar { width: 64px; height: 3px; background: var(--surface); border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--loop); border-radius: 99px; transition: width .4s ease; }
+
+/* ── SECTION SYSTEM ── */
+.section { display: none; flex-direction: column; gap: 0; animation: secIn .2s ease; }
+.section.active { display: flex; }
+@keyframes secIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+
+/* ── CONTENT AREA ── */
+.content-area { max-width: 960px; margin: 0 auto; width: 100%; padding: 24px 24px 48px; display: flex; flex-direction: column; gap: 20px; }
+@media(max-width:640px){ .content-area { padding: 16px 16px 40px; } }
+
+/* ── HERO (SEC 0) ── */
+.hero-band {
+  background: linear-gradient(135deg, #0f0f0d 0%, #1a2a6e 100%);
+  padding: 52px 24px 44px; position: relative; overflow: hidden;
+}
+.hero-band::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(42,82,212,.18) 0%, transparent 70%);
+}
+.hero-inner { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; position: relative; }
+@media(max-width:640px){ .hero-inner { grid-template-columns: 1fr; gap: 32px; } }
+.hero-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #7390e8; margin-bottom: 12px; }
+.hero-title { font-size: 32px; font-weight: 300; line-height: 1.15; color: #fff; margin-bottom: 14px; }
+.hero-title b { font-weight: 500; color: #a8c0ff; }
+.hero-body { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.75; margin-bottom: 20px; }
+.hero-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+.tag { font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 99px; border: .5px solid; }
+.tag-pre { background: rgba(42,82,212,.2); color: #7390e8; border-color: rgba(42,82,212,.3); }
+.tag-time { background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border-color: rgba(255,255,255,.12); }
+.tag-lvl { background: rgba(26,158,114,.2); color: #4ecda0; border-color: rgba(26,158,114,.3); }
+.btn-start {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px; border-radius: var(--r8);
+  background: #fff; color: var(--ink);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  border: none; transition: all .15s; font-family: var(--sans);
+  user-select: none;
+}
+.btn-start:hover { background: var(--accent); color: #fff; }
+
+/* outcomes list */
+.outcomes { display: flex; flex-direction: column; gap: 10px; }
+.oc-item { display: flex; align-items: flex-start; gap: 10px; }
+.oc-check { width: 18px; height: 18px; border-radius: 50%; background: rgba(26,158,114,.2); border: .5px solid rgba(26,158,114,.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; font-size: 9px; color: #4ecda0; }
+.oc-text { font-size: 13px; color: rgba(255,255,255,.7); line-height: 1.5; }
+
+/* progress ring visual */
+.hero-visual { display: flex; align-items: center; justify-content: center; }
+.loop-anim { width: 220px; height: 220px; position: relative; margin: 0 auto; }
+.loop-anim svg { width: 100%; height: 100%; }
+@keyframes spin-ring { to { stroke-dashoffset: -502; } }
+.ring-animated { animation: spin-ring 5s linear infinite; }
+.rn { position: absolute; background: rgba(255,255,255,.06); border: .5px solid rgba(255,255,255,.14); border-radius: var(--r8); padding: 5px 9px; font-size: 10px; font-weight: 500; white-space: nowrap; }
+.rn-perceive { top: 10px; left: 50%; transform: translateX(-50%); color: #7390e8; border-color: rgba(115,144,232,.3); background: rgba(115,144,232,.1); }
+.rn-reason { right: -12px; top: 50%; transform: translateY(-50%); color: #4ecda0; border-color: rgba(78,205,160,.3); background: rgba(78,205,160,.1); }
+.rn-act { bottom: 10px; left: 50%; transform: translateX(-50%); color: #f0a070; border-color: rgba(240,160,112,.3); background: rgba(240,160,112,.1); }
+.rn-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+.rn-center-label { font-size: 11px; color: rgba(255,255,255,.35); line-height: 1.4; }
+
+/* ── CARD ── */
+.card { background: #fff; border: .5px solid var(--border); border-radius: var(--r16); overflow: hidden; }
+.card-hd { padding: 12px 18px; border-bottom: .5px solid var(--border); display: flex; align-items: center; gap: 10px; background: var(--surface); }
+.hd-icon { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+.hi-blue { background: var(--accent-bg); color: var(--accent); }
+.hi-green { background: var(--loop-bg); color: var(--loop); }
+.hi-amber { background: var(--warn-bg); color: var(--warn); }
+.hi-red { background: var(--bad-bg); color: var(--bad); }
+.card-title { font-size: 12px; font-weight: 500; color: var(--ink); }
+.card-hint { font-size: 11px; color: var(--ink3); margin-left: auto; }
+.card-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── CALLOUTS ── */
+.callout { padding: 12px 14px; border-radius: var(--r8); font-size: 13px; line-height: 1.7; border-left: 3px solid; }
+.callout-blue { background: var(--accent-bg); border-color: var(--accent); color: #1e3aa0; }
+.callout-green { background: var(--loop-bg); border-color: var(--loop); color: #0d5a40; }
+.callout-amber { background: var(--warn-bg); border-color: var(--warn); color: #7a3210; }
+.callout-red { background: var(--bad-bg); border-color: var(--bad); color: #7a1a10; }
+
+/* ── TWO COL ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:640px){ .two-col { grid-template-columns: 1fr; } }
+
+/* ── ANALOGY BOX ── */
+.analogy { background: #fffbf0; border: .5px solid #e8d88a; border-radius: var(--r12); padding: 16px 18px; }
+.analogy-lbl { font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: #b8900a; margin-bottom: 8px; }
+.analogy-body { font-size: 13px; color: #5a4a10; line-height: 1.75; }
+.analogy-body b { font-weight: 500; color: #3a3008; }
+
+/* ── SCENARIO MATCHER (SEC 0) ── */
+.scenario-card { border: .5px solid var(--border); border-radius: var(--r12); padding: 16px; background: var(--surface); }
+.scenario-lbl { font-size: 11px; color: var(--ink3); margin-bottom: 10px; font-weight: 500; }
+.scenario-options { display: flex; flex-direction: column; gap: 6px; }
+.sc-opt {
+  padding: 10px 12px; border-radius: var(--r8); border: .5px solid var(--border-mid);
+  font-size: 12px; cursor: pointer; transition: all .12s; background: #fff; color: var(--ink2);
+  display: flex; align-items: center; gap: 8px; user-select: none; line-height: 1.45;
+}
+.sc-opt:hover { border-color: var(--accent-border); background: var(--accent-bg); color: var(--accent); }
+.sc-opt.selected { border-color: var(--accent-border); background: var(--accent-bg); color: var(--accent); }
+.sc-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; opacity: .4; }
+.sc-opt.selected .sc-dot { opacity: 1; }
+.scenario-preview { display: none; padding: 12px 14px; background: var(--accent-bg); border-radius: var(--r8); font-size: 12px; color: #1e3aa0; line-height: 1.65; border: .5px solid var(--accent-border); }
+.scenario-preview.show { display: block; }
+
+/* ── DIAGRAM (SEC 1) ── */
+.step-svg-wrap svg { display: block; }
+.step-cap {
+  padding: 12px 14px; background: var(--accent-bg); border-radius: var(--r8);
+  font-size: 13px; color: var(--ink); line-height: 1.7;
+  border-left: 3px solid var(--accent); min-height: 64px; transition: all .2s;
+}
+.step-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn-step {
+  display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px;
+  border-radius: var(--r8); border: .5px solid var(--border-mid);
+  background: transparent; color: var(--ink2); font-size: 12px; font-weight: 500;
+  cursor: pointer; font-family: var(--sans); transition: all .12s; user-select: none;
+}
+.btn-step:hover { background: var(--surface); }
+.btn-step.pri { background: var(--accent); color: #fff; border-color: transparent; }
+.btn-step.pri:hover { opacity: .88; }
+.btn-step.sm { font-size: 11px; padding: 5px 10px; color: var(--ink3); }
+.step-dots { display: flex; gap: 5px; margin-left: auto; }
+.sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-mid); cursor: pointer; transition: all .18s; }
+.sdot.act { background: var(--accent); width: 16px; border-radius: 3px; }
+.sdot.dn { background: var(--loop); }
+
+/* ── SANDBOX PARAMS ── */
+.param-group { display: flex; flex-direction: column; gap: 14px; }
+.param-row { display: flex; flex-direction: column; gap: 5px; }
+.param-lbl { display: flex; justify-content: space-between; align-items: baseline; }
+.param-name { font-size: 12px; color: var(--ink2); font-family: var(--mono); }
+.param-val { font-size: 13px; font-weight: 500; color: var(--ink); font-family: var(--mono); }
+.param-hint { font-size: 10px; color: var(--ink3); margin-top: 2px; }
+input[type=range] { width: 100%; height: 4px; cursor: pointer; accent-color: var(--accent); }
+
+/* ── METRICS ── */
+.metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+@media(max-width:640px){ .metrics { grid-template-columns: repeat(2,1fr); } }
+.metric { background: var(--surface); border-radius: var(--r8); padding: 12px; text-align: center; }
+.metric-n { font-size: 20px; font-weight: 500; font-family: var(--mono); line-height: 1; }
+.metric-l { font-size: 10px; color: var(--ink3); margin-top: 4px; line-height: 1.3; }
+.c-good { color: var(--good); }
+.c-warn { color: var(--warn); }
+.c-bad { color: var(--bad); }
+
+/* ── GROWTH CHART ── */
+.growth { display: flex; flex-direction: column; gap: 4px; }
+.gr-row { display: flex; align-items: center; gap: 8px; }
+.gr-lbl { font-size: 10px; color: var(--ink3); font-family: var(--mono); min-width: 24px; text-align: right; }
+.gr-track { flex: 1; height: 5px; background: var(--surface); border-radius: 99px; overflow: hidden; }
+.gr-fill { height: 100%; border-radius: 99px; transition: width .35s ease; }
+.gr-val { font-size: 10px; color: var(--ink3); font-family: var(--mono); min-width: 38px; }
+
+/* ── TRACE LOG ── */
+.trace { display: flex; flex-direction: column; gap: 4px; }
+.tr-row {
+  display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px;
+  border-radius: var(--r8); font-size: 12px; line-height: 1.55;
+  animation: trIn .18s ease;
+}
+@keyframes trIn { from{opacity:0;transform:translateY(3px)} to{opacity:1;transform:none} }
+.tr-loop { background: var(--accent-bg); border: .5px solid var(--accent-border); color: #1e3aa0; }
+.tr-warn { background: var(--warn-bg); border: .5px solid var(--warn-border); color: var(--warn); }
+.tr-done { background: var(--good-bg); border: .5px solid var(--good-border); color: var(--good); }
+.tr-err  { background: var(--bad-bg); border: .5px solid var(--bad-border); color: var(--bad); }
+.tr-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── CODE SANDBOX ── */
+.code-shell { background: #16161a; border-radius: var(--r12); overflow: hidden; }
+.code-bar { padding: 8px 14px; display: flex; align-items: center; gap: 8px; border-bottom: .5px solid rgba(255,255,255,.06); background: rgba(255,255,255,.03); }
+.code-filename { font-size: 11px; color: #6b7280; font-family: var(--mono); }
+.code-badge { font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: 500; }
+.cb-mod { background: rgba(186,117,23,.2); color: #e8a040; margin-left: auto; display: none; }
+.cb-mod.show { display: inline-block; }
+.cb-ai { background: rgba(42,82,212,.2); color: #7390e8; }
+.code-body {
+  padding: 14px 16px; font-family: var(--mono); font-size: 12px; line-height: 1.85;
+  overflow-x: auto; white-space: pre; min-height: 200px;
+  outline: none;
+}
+.kw{color:#c792ea}.cm{color:#546478;font-style:italic}.st{color:#c3e88d}
+.nm{color:#f78c6c}.fn{color:#82aaff}.vr{color:#eef}.df{color:#ffcb6b}.op{color:#89ddff}
+.code-editable {
+  color: #f78c6c; border-bottom: 1px dashed rgba(248,140,108,.5);
+  cursor: text; outline: none; display: inline-block; min-width: 20px;
+  padding: 0 2px; border-radius: 2px; transition: background .1s;
+}
+.code-editable:focus { background: rgba(248,140,108,.12); border-bottom-color: #f78c6c; }
+.run-bar { padding: 10px 14px; border-top: .5px solid rgba(255,255,255,.06); display: flex; gap: 8px; align-items: center; background: rgba(255,255,255,.02); flex-wrap: wrap; }
+.btn-run {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+  border-radius: var(--r8); background: var(--accent); color: #fff;
+  font-size: 12px; font-weight: 500; cursor: pointer; border: none;
+  font-family: var(--sans); transition: all .12s; user-select: none;
+}
+.btn-run:hover { opacity: .88; }
+.btn-run.running { opacity: .5; pointer-events: none; }
+.btn-run.loading { background: var(--loop); }
+.btn-reset-code { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border-radius: var(--r8); background: transparent; color: #6b7280; border: .5px solid rgba(255,255,255,.1); font-size: 11px; cursor: pointer; font-family: var(--sans); transition: all .12s; }
+.btn-reset-code:hover { background: rgba(255,255,255,.05); }
+.run-status { font-size: 11px; color: #4a5568; font-family: var(--mono); }
+.run-hint { font-size: 10px; color: #4a5568; font-family: var(--mono); margin-left: auto; }
+
+/* ── AI EXPLAIN PANEL ── */
+.ai-explain {
+  background: #1a1f2e; border: .5px solid rgba(115,144,232,.25);
+  border-radius: var(--r12); overflow: hidden; display: none;
+}
+.ai-explain.show { display: block; animation: trIn .2s ease; }
+.ae-header { padding: 10px 14px; border-bottom: .5px solid rgba(115,144,232,.15); display: flex; align-items: center; gap: 8px; }
+.ae-dot { width: 6px; height: 6px; border-radius: 50%; background: #7390e8; }
+.ae-title { font-size: 11px; color: #7390e8; font-family: var(--mono); }
+.ae-badge { font-size: 10px; color: #4a5568; margin-left: auto; font-family: var(--mono); }
+.ae-body { padding: 14px 16px; font-size: 12px; color: rgba(255,255,255,.75); line-height: 1.8; font-family: var(--sans); min-height: 60px; }
+.ae-body .ae-cursor { display: inline-block; width: 2px; height: 12px; background: #7390e8; margin-left: 2px; animation: blink .7s infinite; vertical-align: middle; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.ae-body strong { color: #a8c0ff; font-weight: 500; }
+.ae-body em { color: #f0a070; font-style: normal; }
+
+/* ── ADVISOR PANEL ── */
+.advisor-result {
+  border: .5px solid var(--border); border-radius: var(--r12); overflow: hidden; display: none;
+}
+.advisor-result.show { display: block; animation: trIn .2s ease; }
+.adv-header { padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+.adv-status { font-size: 12px; font-weight: 500; }
+.adv-score { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; font-family: var(--mono); flex-shrink: 0; }
+.adv-body { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+.adv-dim { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: var(--r8); background: var(--surface); }
+.adv-dim-label { font-size: 11px; font-weight: 500; color: var(--ink2); min-width: 60px; flex-shrink: 0; }
+.adv-dim-val { font-size: 11px; color: var(--ink2); line-height: 1.5; }
+.adv-dim-badge { font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: 500; flex-shrink: 0; margin-left: auto; }
+
+/* ── INSIGHT / RESULT ── */
+.insight { padding: 14px 16px; background: var(--accent-bg); border: .5px solid var(--accent-border); border-radius: var(--r8); font-size: 13px; color: #1e3aa0; line-height: 1.7; display: none; }
+.insight.show { display: block; animation: trIn .2s ease; }
+.insight b { font-weight: 500; }
+
+/* ── QUIZ ── */
+.quiz-q { font-size: 14px; font-weight: 500; color: var(--ink); line-height: 1.55; margin-bottom: 14px; }
+.quiz-q .q-num { font-size: 11px; font-weight: 400; color: var(--ink3); display: block; margin-bottom: 4px; font-family: var(--mono); }
+.qopts { display: flex; flex-direction: column; gap: 8px; }
+.qopt { padding: 12px 14px; border-radius: var(--r8); border: .5px solid var(--border-mid); font-size: 13px; cursor: pointer; transition: all .12s; line-height: 1.5; color: var(--ink); user-select: none; }
+.qopt:hover { border-color: var(--accent-border); background: var(--accent-bg); }
+.qopt.correct { background: var(--good-bg); border-color: var(--good-border); color: var(--good); pointer-events: none; }
+.qopt.wrong { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn); pointer-events: none; }
+.qopt.disabled { pointer-events: none; opacity: .5; }
+.qfb { font-size: 12px; padding: 10px 12px; border-radius: var(--r8); line-height: 1.65; margin-top: 10px; display: none; }
+.qfb.ok { display: block; background: var(--good-bg); color: var(--good); border: .5px solid var(--good-border); }
+.qfb.bad { display: block; background: var(--warn-bg); color: var(--warn); border: .5px solid var(--warn-border); }
+
+/* ── OPEN QUESTION (SEC 4 · SCENARIO EVAL) ── */
+.open-q textarea {
+  width: 100%; border: .5px solid var(--border-mid); border-radius: var(--r8);
+  padding: 12px 14px; font-size: 13px; font-family: var(--sans); color: var(--ink);
+  background: var(--surface); resize: vertical; min-height: 80px; line-height: 1.6;
+  transition: border-color .12s; outline: none;
+}
+.open-q textarea:focus { border-color: var(--accent-border); background: #fff; }
+.open-q textarea::placeholder { color: var(--ink3); }
+
+/* ── AI EVAL RESULT ── */
+.eval-result { border: .5px solid var(--border); border-radius: var(--r12); overflow: hidden; display: none; }
+.eval-result.show { display: block; animation: trIn .25s ease; }
+.eval-header { padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+.eval-score-ring { width: 48px; height: 48px; flex-shrink: 0; }
+.eval-verdict { font-size: 14px; font-weight: 500; }
+.eval-subtitle { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+.eval-dims { padding: 0 18px 16px; display: flex; flex-direction: column; gap: 8px; }
+.eval-dim { padding: 10px 12px; border-radius: var(--r8); background: var(--surface); }
+.eval-dim-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.eval-dim-name { font-size: 11px; font-weight: 500; color: var(--ink2); }
+.eval-dim-score { font-size: 10px; font-weight: 500; padding: 2px 6px; border-radius: 99px; margin-left: auto; }
+.eval-dim-text { font-size: 12px; color: var(--ink2); line-height: 1.55; }
+.eval-suggest { margin: 0 18px 16px; padding: 12px 14px; background: var(--accent-bg); border-radius: var(--r8); border: .5px solid var(--accent-border); }
+.eval-suggest-lbl { font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.eval-suggest-text { font-size: 12px; color: #1e3aa0; line-height: 1.65; }
+.eval-stream { min-height: 40px; }
+.eval-cursor { display: inline-block; width: 2px; height: 12px; background: var(--accent); margin-left: 2px; animation: blink .7s infinite; vertical-align: middle; }
+
+/* ── AI TUTOR ── */
+.tutor-panel { border: .5px solid var(--border); border-radius: var(--r12); overflow: hidden; }
+.tutor-messages { padding: 14px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.tutor-msg { display: flex; gap: 10px; }
+.tutor-msg.user { flex-direction: row-reverse; }
+.msg-bubble {
+  max-width: 80%; padding: 10px 12px; border-radius: var(--r12); font-size: 12px; line-height: 1.65;
+}
+.tutor-msg.ai .msg-bubble { background: var(--surface); color: var(--ink); border-radius: 4px var(--r12) var(--r12) var(--r12); }
+.tutor-msg.user .msg-bubble { background: var(--accent); color: #fff; border-radius: var(--r12) 4px var(--r12) var(--r12); }
+.tutor-avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-top: 1px; }
+.tutor-msg.ai .tutor-avatar { background: var(--accent-bg); color: var(--accent); }
+.tutor-msg.user .tutor-avatar { background: var(--loop-bg); color: var(--loop); }
+.tutor-input-row { border-top: .5px solid var(--border); padding: 10px 12px; display: flex; gap: 8px; background: var(--surface); }
+.tutor-input {
+  flex: 1; border: .5px solid var(--border-mid); border-radius: 99px;
+  padding: 7px 14px; font-size: 12px; font-family: var(--sans); color: var(--ink);
+  background: #fff; outline: none; transition: border-color .12s;
+}
+.tutor-input:focus { border-color: var(--accent-border); }
+.tutor-input::placeholder { color: var(--ink3); }
+.btn-tutor-send {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff;
+  border: none; cursor: pointer; font-size: 13px; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; transition: all .12s; font-family: var(--sans);
+}
+.btn-tutor-send:hover { opacity: .85; }
+.btn-tutor-send:disabled { opacity: .4; pointer-events: none; }
+.typing-indicator { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+.typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink3); animation: typingPulse 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay: .2s; }
+.typing-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes typingPulse { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
+
+/* ── NAV FOOTER ── */
+.lesson-footer { border-top: .5px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; background: var(--surface); max-width: 960px; width: 100%; margin: 0 auto; }
+.btn-nav { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--r8); font-size: 12px; font-weight: 500; cursor: pointer; border: .5px solid var(--border-mid); background: #fff; color: var(--ink); font-family: var(--sans); transition: all .12s; user-select: none; }
+.btn-nav:hover { background: var(--surface); }
+.btn-nav.pri { background: var(--ink); color: var(--paper); border-color: transparent; }
+.btn-nav.pri:hover { background: var(--accent); }
+.footer-info { font-size: 11px; color: var(--ink3); }
+.footer-right { margin-left: auto; display: flex; gap: 8px; }
+
+/* ── COMPLETION ── */
+.completion-card { background: linear-gradient(135deg, var(--accent-bg) 0%, var(--loop-bg) 100%); border: .5px solid var(--accent-border); border-radius: var(--r16); padding: 40px; text-align: center; display: none; }
+.completion-card.show { display: block; animation: trIn .3s ease; }
+.cc-icon { font-size: 40px; margin-bottom: 16px; }
+.cc-title { font-size: 20px; font-weight: 500; margin-bottom: 8px; }
+.cc-body { font-size: 13px; color: var(--ink2); line-height: 1.7; max-width: 420px; margin: 0 auto 24px; }
+
+/* ── WEEK CONTEXT BANNER ── */
+.week-banner { background: var(--surface); border: .5px solid var(--border); border-radius: var(--r12); padding: 14px 18px; display: flex; gap: 32px; flex-wrap: wrap; }
+.wb-item { display: flex; flex-direction: column; gap: 3px; }
+.wb-label { font-size: 10px; color: var(--ink3); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+.wb-value { font-size: 12px; color: var(--ink); font-weight: 500; }
+.wb-sep { width: .5px; background: var(--border-mid); align-self: stretch; }
+
+/* ── PREVENT OVERFLOW ── */
+.code-body { word-break: normal; overflow-wrap: normal; }
+</style>
+</head>
+<body>
+<div class="lesson">
+
+<!-- ── NAV ── -->
+<nav class="lesson-nav">
+  <div class="nav-logo">W1 · Lesson 01</div>
+  <div class="nav-steps">
+    <div class="nav-step active" id="nstep0" onclick="goSection(0)"><div class="ns-dot">1</div>开始</div>
+    <div class="nav-step" id="nstep1" onclick="goSection(1)"><div class="ns-dot">2</div>概念</div>
+    <div class="nav-step" id="nstep2" onclick="goSection(2)"><div class="ns-dot">3</div>图解</div>
+    <div class="nav-step" id="nstep3" onclick="goSection(3)"><div class="ns-dot">4</div>沙盒</div>
+    <div class="nav-step" id="nstep4" onclick="goSection(4)"><div class="ns-dot">5</div>实验</div>
+    <div class="nav-step" id="nstep5" onclick="goSection(5)"><div class="ns-dot">6</div>练习</div>
+  </div>
+  <div class="nav-progress">
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:16%"></div></div>
+    <span id="prog-txt">1 / 6</span>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════
+     SECTION 0 · 开始（防焦虑 + 锚点）
+══════════════════════════════════════ -->
+<section class="section active" id="sec0">
+
+<!-- Hero Band -->
+<div class="hero-band">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">Week 1 · 第 1 课 · 共 8 课</div>
+      <h1 class="hero-title">Agent Loop：<br><b>AI 如何「思考」</b></h1>
+      <p class="hero-body">这节课你不需要写一行代码。我们要搞清楚一件事：当你让 AI 帮你做一个复杂任务时，它的「大脑」究竟在做什么。</p>
+      <div class="hero-tags">
+        <span class="tag tag-pre">Week 1 · 认知建立</span>
+        <span class="tag tag-time">⏱ 约 40 分钟</span>
+        <span class="tag tag-lvl">✓ 无代码基础要求</span>
+      </div>
+      <button class="btn-start" onclick="goSection(1)">开始学习 →</button>
+    </div>
+    <div class="hero-visual">
+      <div class="loop-anim">
+        <svg viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="24"/>
+          <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(115,144,232,.35)" stroke-width="1.5"
+            stroke-dasharray="502" stroke-dashoffset="0" stroke-linecap="round" class="ring-animated"/>
+          <circle cx="100" cy="100" r="6" fill="rgba(115,144,232,.4)"/>
+        </svg>
+        <div class="rn rn-perceive">感知</div>
+        <div class="rn rn-reason">推理</div>
+        <div class="rn rn-act">行动</div>
+        <div class="rn-center"><div class="rn-center-label">Agent<br>Loop</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content-area">
+
+  <!-- 本课结束你能做到的事 -->
+  <div class="card">
+    <div class="card-hd"><div class="hd-icon hi-green">✓</div><div class="card-title">本课结束时，你能做到</div><div class="card-hint">具体可验证</div></div>
+    <div class="card-body">
+      <div class="outcomes" style="gap:12px">
+        <div class="oc-item"><div class="oc-check">✓</div><div class="oc-text">向任何人解释「Agent 为什么会一直跑、不停下来」——用你自己工作中的场景举例</div></div>
+        <div class="oc-item"><div class="oc-check">✓</div><div class="oc-text">看懂 AI 产品的「Token 消耗」账单，判断哪个配置在浪费钱</div></div>
+        <div class="oc-item"><div class="oc-check">✓</div><div class="oc-text">给你的工作场景打一个「适合 Agent 化」的评分，说清楚理由</div></div>
+        <div class="oc-item"><div class="oc-check">✓</div><div class="oc-text">完成 3 道生产场景判断题，全部答对后解锁下一课</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 防焦虑声明 -->
+  <div class="callout callout-blue" style="font-size:13px;line-height:1.8">
+    <b>你不需要</b>在这节课里理解任何底层技术原理。「Token」「Context Window」这些词我们会解释，但你不需要记住它们的实现细节——你只需要理解它们对你的任务意味着什么。
+  </div>
+
+  <!-- 选择你的场景（主线需求文档 · 第一步） -->
+  <div class="card">
+    <div class="card-hd"><div class="hd-icon hi-amber">◎</div><div class="card-title">选择你的主线场景</div><div class="card-hint">贯穿全课使用</div></div>
+    <div class="card-body">
+      <div style="font-size:13px;color:var(--ink2);line-height:1.7">课程中所有概念都会用<b>你选择的场景</b>来解释。选一个你实际工作中会遇到的：</div>
+      <div class="scenario-options" id="scenario-opts">
+        <div class="sc-opt" onclick="selectScenario(0)"><div class="sc-dot"></div>每天盯盘，手动检查几十个持仓的最新动态和新闻</div>
+        <div class="sc-opt" onclick="selectScenario(1)"><div class="sc-dot"></div>写研报初稿：整合多个数据源，梳理逻辑，输出结构化内容</div>
+        <div class="sc-opt" onclick="selectScenario(2)"><div class="sc-dot"></div>定期给客户发投资组合回顾报告，每次都要手动拉数据改格式</div>
+        <div class="sc-opt" onclick="selectScenario(3)"><div class="sc-dot"></div>监控市场风险指标，出现异常时需要快速分析和汇报</div>
+      </div>
+      <div class="scenario-preview" id="scenario-preview"></div>
+    </div>
+  </div>
+
+  <!-- 操作前确认 -->
+  <div class="card">
+    <div class="card-hd"><div class="hd-icon hi-blue">□</div><div class="card-title">操作前确认清单</div><div class="card-hint">本课无需环境配置</div></div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:var(--ink2)"><input type="checkbox" style="accent-color:var(--loop)"> 我已选择了一个主线场景（上方）</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:var(--ink2)"><input type="checkbox" style="accent-color:var(--loop)"> 我知道这节课不需要写代码</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:var(--ink2)"><input type="checkbox" style="accent-color:var(--loop)"> 我有 40 分钟不被打扰的时间</label>
+      </div>
+      <div style="font-size:12px;color:var(--ink3)">全部打勾后点击「开始」——或者直接点，也完全可以。</div>
+    </div>
+  </div>
+
+</div>
+<div class="lesson-footer">
+  <div class="footer-info">第 1 节 · 共 6 节</div>
+  <div class="footer-right"><button class="btn-nav pri" onclick="goSection(1)">进入概念 →</button></div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 1 · 概念（类比 + 金融视角）
+══════════════════════════════════════ -->
+<section class="section" id="sec1">
+<div class="content-area">
+
+  <div class="week-banner">
+    <div class="wb-item"><div class="wb-label">本节类型</div><div class="wb-value">概念理解</div></div>
+    <div class="wb-sep"></div>
+    <div class="wb-item"><div class="wb-label">预计时间</div><div class="wb-value">10 分钟</div></div>
+    <div class="wb-sep"></div>
+    <div class="wb-item"><div class="wb-label">技术密度</div><div class="wb-value">低——认识即可</div></div>
+    <div class="wb-sep"></div>
+    <div class="wb-item"><div class="wb-label">下一节</div><div class="wb-value">图解（交互式）</div></div>
+  </div>
+
+  <!-- 核心类比 -->
+  <div class="card">
+    <div class="card-hd"><div class="hd-icon hi-amber">≈</div><div class="card-title">类比：Agent 像什么？</div><div class="card-hint">用你的场景理解</div></div>
+    <div class="card-body">
+      <div class="analogy">
+        <div class="analogy-lbl">金融场景类比</div>
+        <div class="analogy-body" id="analogy-text">
+          选择你的主线场景后，这里会出现对应的类比。<br>请先返回第一节选择你的场景。
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.8">
+        Agent 的本质是：把「<b>每一步做什么</b>」这个决策交给 LLM 来判断。它不是执行固定脚本，而是<b>每轮都重新看一遍现有信息，然后决定下一步</b>。
+        <br><br>
+        这带来了巨大的灵活性——也带来了新的风险：你不再能预测它会走哪条路，也不知道它什么时候会「停下来」。
+      </div>
+    </div>
+  </div>
+
+  <!-- 三个关键概念 -->
+  <div class="card">
+    <div class="card-hd"><div class="hd-icon hi-blue">◈</div><div class="card-title">三个你必须理解的概念</div></div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <div style="padding:14px;border:.5px solid var(--border);border-radius:var(--r12)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--accent-bg);color:var(--accent)">概念 1</div>
+            <div style="font-size:13px;font-weight:500">Context Window · 记忆容量</div>
+          </div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.75">
+            LLM 每次只能「看到」一个固定大小的文本窗口。<b>每轮循环，它看到的内容都在增长</b>——上一轮的观测、自己之前的回复、所有历史记录都要塞进这个窗口。
+            <br><br>
+            <span style="background:var(--warn-bg);color:var(--warn);padding:2px 6px;border-radius:4px;font-size:12px">窗口塞满了就会截断——就像你的工作台太小，只能把最早的文件推到地上</span>
+          </div>
+        </div>
+
+        <div style="padding:14px;border:.5px solid var(--border);border-radius:var(--r12)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--loop-bg);color:var(--loop)">概念 2</div>
+            <div style="font-size:13px;font-weight:500">Agent Loop · 循环机制</div>
+          </div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.75">
+            Agent 不是一问一答，而是<b>不断循环</b>：观测环境 → 推理下一步 → 执行行动 → 再次观测。这个循环会一直跑，直到满足终止条件。
+            <br><br>
+            <span style="background:var(--good-bg);color:var(--good);padding:2px 6px;border-radius:4px;font-size:12px">「执行轮次」越多，完成的任务越复杂，但消耗的 Token 也越多</span>
+          </div>
+        </div>
+
+        <div style="padding:14px;border:.5px solid var(--border);border-radius:var(--r12)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--warn-bg);color:var(--warn)">概念 3</div>
+            <div style="font-size:13px;font-weight:500">终止条件 · Agent 的刹车</div>
+          </div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.75">
+            Agent <b>不会自动知道任务完成了</b>。你必须告诉它「完成的样子是什么」，或者设置一个「最多跑多少轮」的安全网。
+            <br><br>
+            <span style="background:var(--bad-bg);color:var(--bad);padding:2px 6px;border-radius:4px;font-size:12px">缺少终止条件 = 无限循环 = 无限账单</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- AI 导师 -->
+  <div class="card">
+    <div class="card-hd"><div class="hd-icon hi-blue">✦</div><div class="card-title">AI 导师</div><div class="card-hint">有疑问直接问</div></div>
+    <div class="tutor-panel" style="border:none">
+      <div class="tutor-messages" id="tutor-msgs">
+        <div class="tutor-msg ai">
+          <div class="tutor-avatar">✦</div>
+          <div class="msg-bubble">你好！我是这节课的 AI 导师。关于 Agent Loop、Context Window 或终止条件，有什么不清楚的地方？<br><br>你也可以直接把你的主线场景告诉我，我来解释这些概念在你的场景里具体是什么。</div>
+        </div>
+      </div>
+      <div class="tutor-input-row">
+        <input class="tutor-input" id="tutor-input" placeholder="输入你的问题，比如「Context Window 和内存有什么区别」…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendTutorMsg();}">
+        <button class="btn-tutor-send" id="tutor-send-btn" onclick="sendTutorMsg()">↑</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="lesson-footer">
+  <button class="btn-nav" onclick="goSection(0)">← 开始</button>
+  <div class="footer-info">第 2 节 · 共 6 节</div>
+  <div class="footer-right"><button class="btn-nav pri" onclick="goSection(2)">进入图解 →</button></div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 2 · 图解（交互式）
+══════════════════════════════════════ -->
+<section class="section" id="sec2">
+<div class="content-area">
+
+  <div class="card">
+    <div class="card-hd"><div class="hd-icon hi-blue">◈</div><div class="card-title">Loop 的五个节点</div><div class="card-hint">点击节点或逐步探索</div></div>
+    <div class="card-body">
+      <div class="step-svg-wrap">
+        <svg width="100%" viewBox="0 0 640 280" id="loop-svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <!-- Environment -->
+        <g id="ln-env" onclick="diagramJump(0)" style="cursor:pointer;transition:opacity .2s">
+          <rect x="20" y="114" width="130" height="54" rx="8" fill="#eef1fd" stroke="#b3c0f0" stroke-width=".5"/>
+          <text font-family="DM Sans,sans-serif" font-size="13" font-weight="500" fill="#1e3aa0" x="85" y="136" text-anchor="middle" dominant-baseline="central">Environment</text>
+          <text font-family="DM Sans,sans-serif" font-size="10" fill="#4a6abf" x="85" y="155" text-anchor="middle" dominant-baseline="central">观测 · 工具结果 · 反馈</text>
+        </g>
+        <!-- Context Window -->
+        <g id="ln-ctx" onclick="diagramJump(1)" style="cursor:pointer;transition:opacity .2s">
+          <rect x="220" y="24" width="200" height="54" rx="8" fill="#eef1fd" stroke="#b3c0f0" stroke-width=".5"/>
+          <text font-family="DM Sans,sans-serif" font-size="13" font-weight="500" fill="#1e3aa0" x="320" y="46" text-anchor="middle" dominant-baseline="central">Context Window</text>
+          <text font-family="DM Sans,sans-serif" font-size="10" fill="#4a6abf" x="320" y="65" text-anchor="middle" dominant-baseline="central">system · history · obs（累积增长）</text>
+        </g>
+        <!-- LLM -->
+        <g id="ln-llm" onclick="diagramJump(2)" style="cursor:pointer;transition:opacity .2s">
+          <rect x="490" y="114" width="130" height="54" rx="8" fill="#e3f5ee" stroke="#7dd4b8" stroke-width=".5"/>
+          <text font-family="DM Sans,sans-serif" font-size="13" font-weight="500" fill="#0d6b4f" x="555" y="136" text-anchor="middle" dominant-baseline="central">LLM</text>
+          <text font-family="DM Sans,sans-serif" font-size="10" fill="#1a9e72" x="555" y="155" text-anchor="middle" dominant-baseline="central">推理 · 决策</text>
+        </g>
+        <!-- Action -->
+        <g id="ln-act" onclick="diagramJump(3)" style="cursor:pointer;transition:opacity .2s">
+          <rect x="220" y="202" width="200" height="54" rx="8" fill="#fdeee3" stroke="#f0b088" stroke-width=".5"/>
+          <text font-family="DM Sans,sans-serif" font-size="13" font-weight="500" fill="#8b3a0e" x="320" y="224" text-anchor="middle" dominant-baseline="central">Action</text>
+          <text font-family="DM Sans,sans-serif" font-size="10" fill="#c45c1a" x="320" y="243" text-anchor="middle" dominant-baseline="central">tool_call · 代码执行 · 消息</text>
+        </g>
+        <!-- Stop -->
+        <g id="ln-stop" onclick="diagramJump(4)" style="cursor:pointer;transition:opacity .2s">
+          <rect x="494" y="210" width="122" height="38" rx="19" fill="#f2f0eb" stroke="#c8c6be" stroke-width=".5"/>
+          <text font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#4a4a44" x="555" y="229" text-anchor="middle" dominant-baseline="central">终止条件</text>
+        </g>
+        <!-- Arrows -->
+        <path id="la1" d="M150 134 L220 54" fill="none" stroke="#7390e8" stroke-width="1" marker-end="url(#arr)" opacity=".3"/>
+        <path id="la2" d="M420 54 L490 134" fill="none" stroke="#7390e8" stroke-width="1" marker-end="url(#arr)" opacity=".3"/>
+        <path id="la3" d="M555 168 L450 228" fill="none" stroke="#7dd4b8" stroke-width="1" marker-end="url(#arr)" opacity=".3"/>
+        <path id="la4" d="M220 230 L150 172" fill="none" stroke="#f0b088" stroke-width="1" marker-end="url(#arr)" opacity=".3"/>
+        <path id="la5" d="M555 168 L555 208" fill="none" stroke="#c8c6be" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arr)" opacity=".3"/>
+        <!-- Labels -->
+        <text id="ll1" font-family="DM Sans,sans-serif" font-size="10" fill="#7390e8" x="174" y="82" text-anchor="middle" opacity=".5">观测</text>
+        <text id="ll2" font-family="DM Sans,sans-serif" font-size="10" fill="#7390e8" x="462" y="92" text-anchor="middle" opacity=".5">输入</text>
+        <text id="ll3" font-family="DM Sans,sans-serif" font-size="10" fill="#7dd4b8" x="504" y="205" text-anchor="middle" opacity=".5">输出</text>
+        <text id="ll4" font-family="DM Sans,sans-serif" font-size="10" fill="#f0b088" x="170" y="208" text-anchor="middle" opacity=".5">执行</text>
+        <text id="ll5" font-family="DM Sans,sans-serif" font-size="10" fill="#c8c6be" x="574" y="192" text-anchor="start" opacity=".5">done?</text>
+        </svg>
+      </div>
+      <div class="step-cap" id="diag-cap">点击「下一步」逐步探索各节点，或直接点击图中任意节点跳转。</div>
+      <div class="step-btns">
+        <button class="btn-step" onclick="diagramPrev()">← 上一步</button>
+        <button class="btn-step pri" onclick="diagramNext()">下一步 →</button>
+        <button class="btn-step sm" onclick="diagramReset()">↺ 重置</button>
+        <div class="step-dots" id="diag-dots"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-hd"><div class="hd-icon hi-green">↑</div><div class="card-title">Context 每轮线性增长</div></div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--ink2);line-height:1.75">每轮循环都要把新的观测和 LLM 回复追加进去。<br><br>假设：system=400 tokens，每轮 obs+asst=440 tokens<br><br>第 1 轮：840 tokens<br>第 5 轮：2,600 tokens<br>第 20 轮：<b style="color:var(--warn)">9,200 tokens</b></div>
+        <div class="callout callout-amber" style="font-size:12px">⚠ 未加干预时，context 会触顶截断。这是下一课「Context 管理」的核心问题。</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="hd-icon hi-amber">⊡</div><div class="card-title">Loop 靠终止条件停下</div></div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--ink2);line-height:1.7">三道保障——缺一就有风险：</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:12px;padding:8px 10px;background:var(--good-bg);border:.5px solid var(--good-border);border-radius:var(--r8);color:var(--good)">✓ LLM 主动输出终止信号（如 <code style="font-family:var(--mono)">TASK_DONE</code>）</div>
+          <div style="font-size:12px;padding:8px 10px;background:var(--good-bg);border:.5px solid var(--good-border);border-radius:var(--r8);color:var(--good)">✓ 达到 <code style="font-family:var(--mono)">max_turns</code> 上限强制退出</div>
+          <div style="font-size:12px;padding:8px 10px;background:var(--good-bg);border:.5px solid var(--good-border);border-radius:var(--r8);color:var(--good)">✓ 外部中断（用户取消 / 超时）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="lesson-footer">
+  <button class="btn-nav" onclick="goSection(1)">← 概念</button>
+  <div class="footer-info">第 3 节 · 共 6 节</div>
+  <div class="footer-right"><button class="btn-nav pri" onclick="goSection(3)">进入沙盒 →</button></div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 3 · 沙盒（滑块 + AI 生产建议）
+══════════════════════════════════════ -->
+<section class="section" id="sec3">
+<div class="content-area">
+
+  <div style="font-size:13px;color:var(--ink2);line-height:1.75;padding:14px 16px;background:#fff;border:.5px solid var(--border);border-radius:var(--r12)">
+    拖动参数滑块，实时观察 Agent 的行为变化。调完后点「AI 生产建议」——AI 会评估这套配置在真实项目中是否合理。
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="hd-icon hi-green">⊟</div><div class="card-title">参数沙盒</div><div class="card-hint">拖动实时计算</div></div>
+    <div class="card-body">
+      <div class="two-col">
+        <div class="param-group">
+          <div class="param-row">
+            <div class="param-lbl"><span class="param-name">max_turns</span><span class="param-val" id="pv-turns">8</span></div>
+            <input type="range" min="1" max="30" value="8" step="1" id="sl-turns" oninput="calcSandbox()">
+            <div class="param-hint">Agent 最多执行多少轮。生产环境建议 10–20。</div>
+          </div>
+          <div class="param-row">
+            <div class="param-lbl"><span class="param-name">system_tokens</span><span class="param-val" id="pv-sys">400</span></div>
+            <input type="range" min="100" max="2000" value="400" step="100" id="sl-sys" oninput="calcSandbox()">
+            <div class="param-hint">System prompt 的 token 量，每轮固定消耗。</div>
+          </div>
+          <div class="param-row">
+            <div class="param-lbl"><span class="param-name">obs_per_turn</span><span class="param-val" id="pv-obs">280</span></div>
+            <input type="range" min="50" max="1000" value="280" step="50" id="sl-obs" oninput="calcSandbox()">
+            <div class="param-hint">每轮用户消息 + 工具观测值的平均 token 量。</div>
+          </div>
+          <div class="param-row">
+            <div class="param-lbl"><span class="param-name">asst_per_turn</span><span class="param-val" id="pv-asst">160</span></div>
+            <input type="range" min="50" max="600" value="160" step="50" id="sl-asst" oninput="calcSandbox()">
+            <div class="param-hint">每轮 LLM 回复的平均 token 量。</div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer"><input type="checkbox" id="cb-stop" checked onchange="calcSandbox()" style="accent-color:var(--accent)"> 启用 stop signal 检测</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer"><input type="checkbox" id="cb-err" onchange="calcSandbox()" style="accent-color:var(--accent)"> 模拟第 5 轮工具错误</label>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="metrics" id="sb-metrics"></div>
+          <div>
+            <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;font-family:var(--mono)">context 增长曲线（每轮）</div>
+            <div class="growth" id="sb-growth"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;font-family:var(--mono)">执行轨迹预览</div>
+        <div class="trace" id="sb-trace" style="max-height:200px;overflow-y:auto"></div>
+      </div>
+
+      <!-- AI 生产建议按钮 -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:.5px solid var(--border);border-radius:var(--r8)">
+        <div style="font-size:12px;color:var(--ink2);flex:1">调好参数后，让 AI 评估这套配置是否适合生产环境</div>
+        <button class="btn-step pri" id="adv-btn" onclick="getAdvisorFeedback()" style="white-space:nowrap;font-size:12px;padding:7px 14px">✦ AI 生产建议</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advisor Result -->
+  <div class="advisor-result" id="adv-result">
+    <div class="adv-header" id="adv-header"></div>
+    <div class="adv-body" id="adv-body"></div>
+  </div>
+
+</div>
+<div class="lesson-footer">
+  <button class="btn-nav" onclick="goSection(2)">← 图解</button>
+  <div class="footer-info">第 4 节 · 共 6 节</div>
+  <div class="footer-right"><button class="btn-nav pri" onclick="goSection(4)">进入实验 →</button></div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 4 · 代码实验（真实 AI 解释）
+══════════════════════════════════════ -->
+<section class="section" id="sec4">
+<div class="content-area">
+
+  <div style="font-size:13px;color:var(--ink2);line-height:1.75;padding:14px 16px;background:#fff;border:.5px solid var(--border);border-radius:var(--r12)">
+    下方代码完全可以编辑。修改任何参数后点击「运行 + AI 解释」——AI 会实时解释<b>你的具体改动</b>会怎么影响 Agent 的行为。这里会调用真实的 Claude API。
+  </div>
+
+  <div class="two-col" style="gap:16px;align-items:start">
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="code-shell">
+        <div class="code-bar">
+          <span class="code-filename">agent_loop.py</span>
+          <span class="code-badge cb-ai">Claude</span>
+          <span class="code-badge cb-mod" id="code-mod">已修改</span>
+        </div>
+        <div class="code-body" id="code-body" contenteditable="true" spellcheck="false"></div>
+        <div class="run-bar">
+          <button class="btn-run" id="run-btn" onclick="runExperiment()">▶ 运行 + AI 解释</button>
+          <button class="btn-reset-code" onclick="resetExperiment()">↺ 重置</button>
+          <span class="run-status" id="run-status"></span>
+          <span class="run-hint">Ctrl+Enter 快速运行</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <div class="card-hd"><div class="hd-icon hi-blue">▶</div><div class="card-title">执行轨迹</div><div class="card-hint" id="exp-tag"></div></div>
+        <div class="card-body" style="min-height:160px" id="exp-output">
+          <div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px">修改代码后点击「运行」</div>
+        </div>
+      </div>
+
+      <div class="insight" id="exp-insight"></div>
+
+      <!-- AI 解释面板（流式） -->
+      <div class="ai-explain" id="ai-explain">
+        <div class="ae-header">
+          <div class="ae-dot"></div>
+          <div class="ae-title">Claude 解释</div>
+          <div class="ae-badge" id="ae-badge">分析中…</div>
+        </div>
+        <div class="ae-body" id="ae-body"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="lesson-footer">
+  <button class="btn-nav" onclick="goSection(3)">← 沙盒</button>
+  <div class="footer-info">第 5 节 · 共 6 节</div>
+  <div class="footer-right"><button class="btn-nav pri" onclick="goSection(5)">进入练习 →</button></div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 5 · 练习（MCQ + 场景评估）
+══════════════════════════════════════ -->
+<section class="section" id="sec5">
+<div class="content-area">
+
+  <div style="padding:14px 16px;background:#fff;border:.5px solid var(--border);border-radius:var(--r12);display:flex;align-items:flex-start;gap:12px">
+    <div style="font-size:22px;line-height:1">◎</div>
+    <div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:4px">场景判断 · 3 题 + 1 个 AI 评估</div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.6">3 道选择题全部答对 + 完成场景评估，解锁下一课「Context 管理与压缩」。</div>
+    </div>
+  </div>
+
+  <div id="quiz-container" style="display:flex;flex-direction:column;gap:16px"></div>
+
+  <!-- 场景适配评估（AI 评估） -->
+  <div class="card" id="scenario-eval-card" style="display:none">
+    <div class="card-hd"><div class="hd-icon hi-blue">✦</div><div class="card-title">AI 场景适配评估</div><div class="card-hint">Claude 评估你的场景</div></div>
+    <div class="card-body">
+      <div style="font-size:13px;color:var(--ink2);line-height:1.7">描述你的一个实际工作场景，AI 会评估它是否适合用 Agent 解决，并说明理由。</div>
+      <div class="open-q">
+        <textarea id="scenario-input" placeholder="例如：我每天需要把 20 个供应商的报价邮件汇总成表格，然后找出最低价和交货期最短的选项……"></textarea>
+      </div>
+      <button class="btn-step pri" id="eval-btn" onclick="runScenarioEval()" style="align-self:flex-start">✦ AI 评估适配度</button>
+    </div>
+  </div>
+
+  <div class="eval-result" id="eval-result">
+    <div class="eval-header" id="eval-header"></div>
+    <div class="eval-dims" id="eval-dims"></div>
+    <div class="eval-suggest" id="eval-suggest" style="display:none"></div>
+  </div>
+
+  <!-- Completion -->
+  <div class="completion-card" id="completion-card">
+    <div class="cc-icon">◎</div>
+    <div class="cc-title">第 1 课完成</div>
+    <div class="cc-body">你已经理解了 Agent Loop 的核心机制。下一课我们深入 Context 管理——这是生产 Agent 最常踩的坑，也是控制成本的关键。</div>
+    <button class="btn-start" onclick="alert('进入第 2 课：Context 管理与压缩')">进入第 2 课 →</button>
+  </div>
+
+</div>
+<div class="lesson-footer">
+  <button class="btn-nav" onclick="goSection(4)">← 实验</button>
+  <div class="footer-info">第 6 节 · 共 6 节</div>
+</div>
+</section>
+
+</div><!-- .lesson -->
+
+<script>
+// ── CONFIG ──
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const MODEL = 'claude-sonnet-4-20250514';
+
+// ── SECTION NAV ──
+const TOTAL = 6;
+let completed = new Set([0]);
+
+function goSection(i) {
+  document.querySelectorAll('.section').forEach((s,j) => s.classList.toggle('active', j===i));
+  document.querySelectorAll('.nav-step').forEach((s,j) => {
+    s.classList.toggle('active', j===i);
+    s.classList.toggle('done', completed.has(j) && j!==i);
+    s.querySelector('.ns-dot').textContent = (completed.has(j) && j!==i) ? '✓' : j+1;
+  });
+  completed.add(i);
+  const pct = Math.round(completed.size / TOTAL * 100);
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('prog-txt').textContent = completed.size+' / '+TOTAL;
+  window.scrollTo({top:0,behavior:'smooth'});
+  if (i===2 && diagStep<0) buildDiagDots();
+  if (i===3) calcSandbox();
+  if (i===4) initExperiment();
+  if (i===5) buildQuiz();
+}
+
+// ── SCENARIO SELECTION ──
+const SCENARIOS = [
+  {
+    label: '每天盯盘，检查持仓动态',
+    analogy: `想象你管理着一个基金的持仓监控任务，每天早上你要检查 30 个股票的最新新闻、公告、价格异动。\n\n<b>传统方式</b>：你按顺序打开每个股票页面，复制粘贴内容，记笔记，花 2 小时。\n\n<b>Agent 方式</b>：Agent 拿到你的持仓列表，第 1 轮搜索第 1 支股票，第 2 轮搜索第 2 支……每轮都把新结果写进「记忆」。搜完所有股票后，它输出一个终止信号——<code>MONITOR_DONE</code>。\n\nLoop 就是这个「每轮处理一个，处理完再看下一个」的循环机制。`,
+    previewAI: '「每次循环」就是处理一支股票。Context Window 是它的工作台——30 支股票的结果都会累积在里面，所以最后几轮时工作台会很大。'
+  },
+  {
+    label: '写研报初稿，整合多数据源',
+    analogy: `你要写一份行业研报，需要整合：监管政策文件、公司财报、市场数据、分析师评论。\n\n<b>传统方式</b>：你花半天时间挨个收集资料，然后再花半天写稿子，中间不断切换文档。\n\n<b>Agent 方式</b>：Agent 按你的研报框架，第 1 轮拉监管文件，第 2 轮拉财报数据，第 3 轮写第一节……每轮结果都追加进 Context。当它写完所有章节，发出 <code>REPORT_DONE</code> 信号退出。\n\n这就是 Loop——任务越复杂，轮次越多，Context 也越大。`,
+    previewAI: '研报 Agent 的 Context 会特别大，因为要把所有原始资料都「记住」。这正是你需要 Context 压缩策略的原因。'
+  },
+  {
+    label: '定期生成客户组合回顾报告',
+    analogy: `每个月底你要给 50 个客户各发一份个性化的投资组合回顾。每份报告要拉该客户的持仓数据、业绩归因、市场背景。\n\n<b>传统方式</b>：一份一份手动拉数据、改模板、检查，花 2 天。\n\n<b>Agent 方式</b>：Agent 拿到客户列表，逐个循环——拉数据、生成报告、检查格式。每处理完一个客户，就把这个客户的报告结果记录进 Context，再处理下一个。50 个客户处理完，Loop 退出。\n\nmax_turns 在这里就是「最多处理多少个客户」的安全网——即使名单有误，也不会无限跑下去。`,
+    previewAI: '批量报告 Agent 的关键设计是：每个客户是一轮 Loop，而不是整个报告是一轮。轮次数 = 客户数量。'
+  },
+  {
+    label: '监控市场风险指标，异常汇报',
+    analogy: `你负责监控 10 个风险指标（波动率、流动性、集中度……），一旦任何指标超阈值，需要在 30 分钟内出具分析报告。\n\n<b>传统方式</b>：你设了很多告警邮件，但收到邮件后还是要手动分析、写报告。\n\n<b>Agent 方式</b>：Agent 轮询所有指标——第 1 轮检查波动率，第 2 轮检查流动性……发现异常时，立刻切换：深入分析该指标、生成报告、发出 <code>ALERT_SENT</code> 终止信号。\n\n有趣的是：正常情况下 Agent 可能 10 轮就完成了；异常情况可能需要 20+ 轮。这就是为什么 max_turns 要根据场景复杂度设置。`,
+    previewAI: '风险监控 Agent 的 Loop 深度是动态的——发现异常时要「钻进去」额外分析，这会消耗更多轮次。'
+  }
+];
+
+let selectedScenario = -1;
+
+function selectScenario(i) {
+  selectedScenario = i;
+  document.querySelectorAll('.sc-opt').forEach((el,j) => el.classList.toggle('selected', j===i));
+  const preview = document.getElementById('scenario-preview');
+  preview.innerHTML = `<b>✦ AI 导师预告：</b>${SCENARIOS[i].previewAI}`;
+  preview.classList.add('show');
+  // update analogy in section 1
+  const analogyEl = document.getElementById('analogy-text');
+  if (analogyEl) analogyEl.innerHTML = SCENARIOS[i].analogy.replace(/\n/g,'<br>');
+}
+
+// ── DIAGRAM ──
+const DIAG_STEPS = [
+  { nodes:['ln-env','ln-ctx'], arrows:['la1'], labels:['ll1'],
+    cap:'① 观测入 Context：每轮循环从环境获取观测值——可以是工具调用结果、用户消息、代码执行输出。这些内容追加进 context window，构成 LLM 下一步推理的输入。' },
+  { nodes:['ln-ctx','ln-llm'], arrows:['la2'], labels:['ll2'],
+    cap:'② Context 送入 LLM：完整的 context（system prompt + 历史对话 + 最新观测）一次性传给 LLM。每轮都传完整历史——这就是 context 越长、每轮推理越贵的原因。' },
+  { nodes:['ln-llm','ln-act','ln-stop'], arrows:['la3','la5'], labels:['ll3','ll5'],
+    cap:'③ LLM 决策：LLM 输出下一步行动（tool_call / 文本 / 代码），同时判断是否满足终止条件。要么继续循环执行行动，要么触发终止信号退出。' },
+  { nodes:['ln-act','ln-env'], arrows:['la4'], labels:['ll4'],
+    cap:'④ Action 执行并反馈：行动被执行（调用 API、运行代码、搜索数据），结果作为新的观测值返回环境，驱动下一轮循环。这就是「loop」——驱动力是观测，终点是终止条件。' },
+  { nodes:['ln-stop'], arrows:['la5'], labels:['ll5'],
+    cap:'⑤ 终止条件设计：三道保障——(a) LLM 主动输出终止信号；(b) 达到 max_turns 上限强制停止；(c) 外部中断（用户取消 / 超时）。三者缺一，Agent 就有无限运行的风险。生产环境必须同时配置 (a) 和 (b)。' }
+];
+const ALL_NODES=['ln-env','ln-ctx','ln-llm','ln-act','ln-stop'];
+const ALL_ARROWS=['la1','la2','la3','la4','la5'];
+const ALL_LABELS=['ll1','ll2','ll3','ll4','ll5'];
+let diagStep = -1;
+
+function applyDiag(s) {
+  const cap = document.getElementById('diag-cap'); if (!cap) return;
+  ALL_NODES.forEach(id=>{const e=document.getElementById(id);if(e)e.style.opacity=s<0||DIAG_STEPS[s].nodes.includes(id)?'1':'0.15'});
+  ALL_ARROWS.forEach(id=>{const e=document.getElementById(id);if(e)e.style.opacity=s<0?'0.3':DIAG_STEPS[s].arrows.includes(id)?'1':'0.07'});
+  ALL_LABELS.forEach(id=>{const e=document.getElementById(id);if(e)e.style.opacity=s<0?'0.5':DIAG_STEPS[s].labels.includes(id)?'1':'0.07'});
+  cap.textContent = s<0 ? '点击「下一步」逐步探索各节点，或直接点击图中任意节点跳转。' : DIAG_STEPS[s].cap;
+  buildDiagDots();
+}
+function buildDiagDots(){
+  const d=document.getElementById('diag-dots'); if(!d)return;
+  d.innerHTML='';
+  DIAG_STEPS.forEach((_,i)=>{
+    const dd=document.createElement('div'); dd.className='sdot'+(i===diagStep?' act':i<diagStep?' dn':'');
+    dd.onclick=()=>{diagStep=i;applyDiag(i)};
+    d.appendChild(dd);
+  });
+}
+function diagramNext(){diagStep=Math.min(diagStep+1,DIAG_STEPS.length-1);applyDiag(diagStep);}
+function diagramPrev(){diagStep=Math.max(diagStep-1,-1);applyDiag(diagStep);}
+function diagramReset(){diagStep=-1;applyDiag(-1);}
+function diagramJump(i){diagStep=i;applyDiag(i);}
+
+// ── SANDBOX ──
+function calcSandbox(){
+  const turns=parseInt(document.getElementById('sl-turns')?.value||8);
+  const sys=parseInt(document.getElementById('sl-sys')?.value||400);
+  const obs=parseInt(document.getElementById('sl-obs')?.value||280);
+  const asst=parseInt(document.getElementById('sl-asst')?.value||160);
+  const stopOn=document.getElementById('cb-stop')?.checked;
+  const errOn=document.getElementById('cb-err')?.checked;
+  ['turns','sys','obs','asst'].forEach(k=>{
+    const el=document.getElementById('pv-'+k);
+    const vals={turns,sys,obs,asst};
+    if(el) el.textContent=vals[k].toLocaleString();
+  });
+
+  const PER=obs+asst, MAX=128000;
+  let totalIn=0; const ctxs=[];
+  for(let r=1;r<=turns;r++){const c=sys+r*PER;totalIn+=c;ctxs.push(c);}
+  const totalOut=turns*asst, total=totalIn+totalOut;
+  const last=ctxs[ctxs.length-1], pct=Math.min(100,Math.round(last/MAX*100));
+  const cost=(totalIn/1e6*3+totalOut/1e6*15);
+  const naturalDone=Math.min(4,turns);
+
+  const m=document.getElementById('sb-metrics');
+  if(m) m.innerHTML=`
+    <div class="metric"><div class="metric-n">${turns}</div><div class="metric-l">最大轮次</div></div>
+    <div class="metric"><div class="metric-n ${pct>80?'c-bad':pct>60?'c-warn':''}">${pct}%</div><div class="metric-l">末轮占 128k</div></div>
+    <div class="metric"><div class="metric-n">${(total/1000).toFixed(1)}k</div><div class="metric-l">总 tokens</div></div>
+    <div class="metric"><div class="metric-n ${cost>.1?'c-warn':'c-good'}">$${cost.toFixed(3)}</div><div class="metric-l">估算费用</div></div>
+  `;
+
+  const maxC=Math.max(...ctxs);
+  const gc=document.getElementById('sb-growth');
+  if(gc) gc.innerHTML=ctxs.slice(0,12).map((v,i)=>{
+    const w=Math.round(v/maxC*100);
+    const d=v>115000,wa=v>80000;
+    return `<div class="gr-row"><span class="gr-lbl">R${i+1}</span><div class="gr-track"><div class="gr-fill" style="width:${w}%;background:${d?'#c42a1a':wa?'#c45c1a':'#2a52d4'}"></div></div><span class="gr-val">${(v/1000).toFixed(1)}k</span></div>`;
+  }).join('');
+
+  const tr=document.getElementById('sb-trace'); if(!tr)return;
+  tr.innerHTML='';
+  const add=(cls,icon,txt)=>{const d=document.createElement('div');d.className='tr-row '+cls;d.innerHTML=`<span class="tr-icon">${icon}</span><span>${txt}</span>`;tr.appendChild(d);};
+  for(let r=1;r<=turns;r++){
+    add('tr-loop','↻',`Round ${r}：obs(${obs}) → context=${((sys+r*PER)/1000).toFixed(1)}k → LLM 推理`);
+    if(errOn&&r===5) add('tr-err','✕',`Round 5：工具调用超时，error 作为 obs 返回 LLM，Loop 继续`);
+    if(r===naturalDone&&stopOn){add('tr-done','✓',`Round ${r}：is_done() 检测到终止信号，提前退出`);break;}
+    if(r===naturalDone&&!stopOn) add('tr-warn','!',`Round ${r}：任务完成，但未检测终止信号，继续执行...`);
+  }
+  if(!stopOn&&turns>naturalDone) add('tr-warn','✕',`达到 max_turns=${turns}，强制终止。共 ${turns-naturalDone} 轮冗余。`);
+}
+
+// ── AI ADVISOR (generateObject style) ──
+async function getAdvisorFeedback() {
+  const turns=parseInt(document.getElementById('sl-turns')?.value||8);
+  const sys=parseInt(document.getElementById('sl-sys')?.value||400);
+  const obs=parseInt(document.getElementById('sl-obs')?.value||280);
+  const asst=parseInt(document.getElementById('sl-asst')?.value||160);
+  const stopOn=document.getElementById('cb-stop')?.checked;
+  const PER=obs+asst, last=sys+turns*PER, cost=(last/1e6*3*turns+turns*asst/1e6*15);
+
+  const btn=document.getElementById('adv-btn');
+  btn.textContent='分析中…'; btn.disabled=true;
+
+  const prompt=`你是一个 AI Agent 配置顾问。用户配置了以下 Agent Loop 参数：
+- max_turns: ${turns}
+- system_tokens: ${sys}
+- obs_per_turn: ${obs}
+- asst_per_turn: ${asst}
+- check_stop: ${stopOn}
+- 末轮 context 大小: ${(last/1000).toFixed(1)}k tokens
+- 估算费用: $${cost.toFixed(4)}/次
+
+请用 JSON 格式评估这套配置（只输出 JSON，不要有其他内容）：
+{
+  "overall": "正常" | "注意" | "危险",
+  "score": 0-100,
+  "summary": "一句话总结配置状态",
+  "dimensions": [
+    {"name": "轮次设置", "rating": "好" | "注意" | "危险", "comment": "12字内"},
+    {"name": "Context 使用", "rating": "好" | "注意" | "危险", "comment": "12字内"},
+    {"name": "终止策略", "rating": "好" | "注意" | "危险", "comment": "12字内"},
+    {"name": "成本估算", "rating": "好" | "注意" | "危险", "comment": "12字内"}
+  ],
+  "suggestion": "最重要的一条改进建议，20字内"
+}`;
+
+  try {
+    const resp = await fetch(ANTHROPIC_API, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ model: MODEL, max_tokens: 500, messages: [{role:'user',content:prompt}] })
+    });
+    const data = await resp.json();
+    const raw = data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    let result;
+    try { result = JSON.parse(raw); } catch(e) { throw new Error('解析失败'); }
+    renderAdvisor(result);
+  } catch(e) {
+    renderAdvisorError();
+  } finally {
+    btn.textContent='✦ AI 生产建议'; btn.disabled=false;
+  }
+}
+
+function renderAdvisor(r) {
+  const colors = { '正常':'var(--good)','注意':'var(--warn)','危险':'var(--bad)' };
+  const bgColors = { '正常':'var(--good-bg)','注意':'var(--warn-bg)','危险':'var(--bad-bg)' };
+  const ratingColors = { '好':'var(--good)','注意':'var(--warn)','危险':'var(--bad)' };
+  const ratingBg = { '好':'var(--good-bg)','注意':'var(--warn-bg)','危险':'var(--bad-bg)' };
+
+  const el=document.getElementById('adv-result');
+  const hd=document.getElementById('adv-header');
+  const bd=document.getElementById('adv-body');
+
+  hd.innerHTML=`
+    <div class="adv-score" style="background:${bgColors[r.overall]||'var(--surface)'};color:${colors[r.overall]||'var(--ink)'};">${r.score}</div>
+    <div>
+      <div class="adv-status" style="color:${colors[r.overall]||'var(--ink)'}">${r.overall} · ${r.summary}</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">配置评分</div>
+    </div>
+  `;
+
+  bd.innerHTML=(r.dimensions||[]).map(d=>`
+    <div class="adv-dim">
+      <div class="adv-dim-label">${d.name}</div>
+      <div class="adv-dim-val">${d.comment}</div>
+      <div class="adv-dim-badge" style="background:${ratingBg[d.rating]||'var(--surface)'};color:${ratingColors[d.rating]||'var(--ink)'}">${d.rating}</div>
+    </div>
+  `).join('')+(r.suggestion?`<div class="callout callout-blue" style="font-size:12px"><b>建议：</b>${r.suggestion}</div>`:'');
+
+  el.classList.add('show');
+}
+
+function renderAdvisorError() {
+  const el=document.getElementById('adv-result');
+  el.innerHTML='<div class="adv-header"><div style="font-size:12px;color:var(--warn);padding:12px">API 请求失败，请检查网络或 API 配置</div></div>';
+  el.classList.add('show');
+}
+
+// ── EXPERIMENT (CODE EDITOR + AI STREAM) ──
+const BASE_CODE = `def run_agent(task: str) -> str:
+    # ── 可修改的配置参数（试试改任意一行）──
+    max_turns      = 8           # 最大轮次
+    check_stop     = True        # 是否检测终止信号
+    system_tokens  = 400         # system prompt tokens
+    obs_per_turn   = 280         # 每轮 obs tokens
+    # ────────────────────────────────────────
+
+    turns, context_size = 0, system_tokens
+    while turns < max_turns:
+        obs           = get_observation()
+        context_size += obs_per_turn
+        action        = llm_decide(context_size)
+        if check_stop and is_done(action):
+            break
+        execute(action)
+        turns += 1
+    return collect_result()`;
+
+let expDefaults = {turns:8, stop:true, sys:400, obs:280};
+
+function initExperiment(){
+  const cb=document.getElementById('code-body');
+  if(cb && cb.textContent.trim()==='') {
+    cb.textContent = BASE_CODE;
+  }
+  cb.addEventListener('keydown', e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runExperiment();}
+  });
+  cb.addEventListener('input', ()=>{
+    const changed = cb.textContent !== BASE_CODE;
+    document.getElementById('code-mod')?.classList.toggle('show', changed);
+  });
+}
+
+function extractParams(code) {
+  const m_turns = code.match(/max_turns\s*=\s*(\d+)/);
+  const m_stop = code.match(/check_stop\s*=\s*(True|False)/);
+  const m_sys = code.match(/system_tokens\s*=\s*(\d+)/);
+  const m_obs = code.match(/obs_per_turn\s*=\s*(\d+)/);
+  return {
+    maxTurns: m_turns ? parseInt(m_turns[1]) : 8,
+    checkStop: m_stop ? m_stop[1]==='True' : true,
+    sysTok: m_sys ? parseInt(m_sys[1]) : 400,
+    obsTok: m_obs ? parseInt(m_obs[1]) : 280,
+  };
+}
+
+async function runExperiment(){
+  const btn=document.getElementById('run-btn'); if(!btn)return;
+  const code = document.getElementById('code-body')?.textContent || BASE_CODE;
+  const {maxTurns, checkStop, sysTok, obsTok} = extractParams(code);
+
+  btn.classList.add('running'); btn.textContent='▶ 분석중...';
+  document.getElementById('run-status').textContent='';
+
+  // Run simulation
+  const NATURAL_DONE = 3;
+  const out=document.getElementById('exp-output'); if(out) out.innerHTML='';
+  const add=(cls,icon,txt)=>{
+    if(!out)return;
+    const d=document.createElement('div');d.className='tr-row '+cls;
+    d.innerHTML=`<span class="tr-icon">${icon}</span><span>${txt}</span>`;
+    out.appendChild(d);
+  };
+
+  await new Promise(r=>setTimeout(r,200));
+
+  if(maxTurns===0){
+    add('tr-warn','⚠','max_turns=0：循环体永远不执行，Agent 立即返回空结果。');
+  } else {
+    for(let r=1;r<=Math.min(maxTurns,20);r++){
+      const ctx=sysTok+r*(obsTok+160);
+      add('tr-loop','↻',`Round ${r}：context=${(ctx/1000).toFixed(1)}k → LLM → action`);
+      if(r===NATURAL_DONE&&checkStop){add('tr-done','✓',`Round ${r}：检测到终止信号，提前退出 ✓`);break;}
+      if(r===NATURAL_DONE&&!checkStop) add('tr-warn','!',`Round ${r}：任务完成，但 check_stop=False，继续运行...`);
+      if(r>NATURAL_DONE&&!checkStop) add('tr-warn','⚠',`Round ${r}：冗余执行（任务第 ${NATURAL_DONE} 轮已完成）`);
+    }
+    const wasted=checkStop?0:Math.max(0,maxTurns-NATURAL_DONE);
+    if(!checkStop&&maxTurns>NATURAL_DONE) add('tr-warn','✕',`max_turns=${maxTurns} 触发，强制终止。冗余：${wasted} 轮`);
+
+    const ins=document.getElementById('exp-insight');
+    if(ins){
+      ins.className='insight show';
+      const tag=document.getElementById('exp-tag');
+      if(maxTurns===0){
+        ins.innerHTML='<b>配置错误：</b>max_turns=0 是常见配置错误，Agent 不会执行任何操作。';
+        if(tag){tag.textContent='⚠ 配置错误';tag.style.cssText='font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;background:var(--bad-bg);color:var(--bad);border:.5px solid var(--bad-border)';}
+      } else if(!checkStop&&wasted>0){
+        ins.innerHTML=`<b>冗余执行：</b>任务第 ${NATURAL_DONE} 轮完成后，又运行了 <b>${wasted} 轮</b>，额外消耗 ≈${Math.round(wasted*(obsTok+160)/1000)}k tokens。`;
+        if(tag){tag.textContent=`⚠ ${wasted} 轮冗余`;tag.style.cssText='font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;background:var(--warn-bg);color:var(--warn);border:.5px solid var(--warn-border)';}
+      } else {
+        ins.innerHTML=`<b>配置正常：</b>check_stop=True 在第 ${NATURAL_DONE} 轮提前退出，max_turns=${maxTurns} 作为安全网未触发。推荐的双重保障配置。`;
+        if(tag){tag.textContent='✓ 正常退出';tag.style.cssText='font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;background:var(--good-bg);color:var(--good);border:.5px solid var(--good-border)';}
+      }
+    }
+  }
+
+  document.getElementById('run-status').textContent='✓ 完成';
+  btn.classList.remove('running'); btn.textContent='▶ 运行 + AI 解释';
+
+  // Now stream AI explanation
+  await streamExplanation(code, maxTurns, checkStop, sysTok, obsTok);
+}
+
+async function streamExplanation(code, maxTurns, checkStop, sysTok, obsTok) {
+  const panel = document.getElementById('ai-explain');
+  const body = document.getElementById('ae-body');
+  const badge = document.getElementById('ae-badge');
+
+  panel.classList.add('show');
+  body.innerHTML = '<span class="ae-cursor"></span>';
+  badge.textContent = '分析中…';
+
+  // Detect what changed
+  const changes = [];
+  if(maxTurns !== 8) changes.push(`max_turns 改为 ${maxTurns}`);
+  if(!checkStop) changes.push('check_stop 改为 False');
+  if(sysTok !== 400) changes.push(`system_tokens 改为 ${sysTok}`);
+  if(obsTok !== 280) changes.push(`obs_per_turn 改为 ${obsTok}`);
+  const changesDesc = changes.length > 0 ? `用户修改了：${changes.join('、')}。` : '代码与默认值相同（未修改任何参数）。';
+
+  const prompt = `你是一个 AI Agent 课程导师，正在教金融从业者理解 Agent Loop。
+
+学员修改了以下 Python 代码：
+\`\`\`python
+${code.slice(0, 800)}
+\`\`\`
+
+${changesDesc}
+当前配置：max_turns=${maxTurns}, check_stop=${checkStop}, system_tokens=${sysTok}, obs_per_turn=${obsTok}
+
+请用2-3句话解释：(1) 这个配置或修改会怎样影响 Agent 的行为？(2) 在金融场景（如持仓监控、研报生成）中，这意味着什么实际影响？语言简洁，用中文，不要用 Markdown 标题格式。`;
+
+  try {
+    const resp = await fetch(ANTHROPIC_API, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: MODEL, max_tokens: 300, stream: true,
+        messages: [{role:'user',content:prompt}]
+      })
+    });
+
+    if(!resp.body) throw new Error('no stream');
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    body.innerHTML = '<span class="ae-cursor"></span>';
+
+    while(true) {
+      const {done, value} = await reader.read();
+      if(done) break;
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+      for(const line of lines) {
+        if(!line.startsWith('data:')) continue;
+        const data = line.slice(5).trim();
+        if(data==='[DONE]') break;
+        try {
+          const obj = JSON.parse(data);
+          const delta = obj.delta?.text || obj.content_block?.text || '';
+          if(delta) {
+            fullText += delta;
+            body.innerHTML = formatAIText(fullText) + '<span class="ae-cursor"></span>';
+          }
+        } catch(e){}
+      }
+    }
+    body.innerHTML = formatAIText(fullText);
+    badge.textContent = '解释完成';
+  } catch(e) {
+    body.innerHTML = '<span style="color:rgba(255,255,255,.4)">AI 解释暂不可用（请检查 API 配置）</span>';
+    badge.textContent = '连接失败';
+  }
+}
+
+function formatAIText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+function resetExperiment(){
+  const cb=document.getElementById('code-body');
+  if(cb){ cb.textContent=BASE_CODE; }
+  document.getElementById('code-mod')?.classList.remove('show');
+  const out=document.getElementById('exp-output');
+  if(out) out.innerHTML='<div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px">修改代码后点击「运行」</div>';
+  const ins=document.getElementById('exp-insight');
+  if(ins) ins.className='insight';
+  const panel=document.getElementById('ai-explain');
+  if(panel) panel.classList.remove('show');
+  document.getElementById('run-status').textContent='';
+  const tag=document.getElementById('exp-tag');
+  if(tag) tag.textContent='';
+}
+
+// ── QUIZ ──
+const QUIZZES=[
+  {
+    q:'一个 Agent 已成功完成任务，但代码中 check_stop=False，max_turns=20。此时 Agent 会怎么做？',
+    opts:['立即停止，任务完成是隐式终止条件','继续执行，直到 max_turns=20 被触发','LLM 会自动识别任务完成并发出停止信号'],
+    correct:1,
+    fb:'正确。Agent Loop 只响应显式终止条件。「任务完成」的概念对 loop 透明——除非 LLM 被明确指示输出终止信号且 check_stop=True，否则 loop 会一直跑到 max_turns。这就是为什么两个条件缺一不可。'
+  },
+  {
+    q:'某 Agent 配置了 max_turns=5，system_tokens=800，每轮 obs=400，asst=200。第 5 轮 context 是多少？',
+    opts:['max_turns × (obs+asst) = 3,000 tokens','system + max_turns × (obs+asst) = 3,800 tokens','只算最后一轮：obs+asst = 600 tokens'],
+    correct:1,
+    fb:'正确。Context 是累积的——system prompt 每轮都存在，历史对话随轮次线性叠加。公式：system + turns×(obs+asst) = 800 + 5×600 = 3,800 tokens。理解这个增长模式是 Context 压缩策略设计的基础。'
+  },
+  {
+    q:'生产环境中，下列哪种终止条件设计最稳健？',
+    opts:['只设 max_turns，足够安全','只设 stop signal 检测，任务完成就退出','同时设 stop signal + max_turns，两者都触发则停止'],
+    correct:2,
+    fb:'正确。Stop signal 是主动终止（效率优先），max_turns 是被动安全网（防止失控）。只有 stop signal 时，如果 LLM 判断出错永远不发终止信号就会无限运行；只有 max_turns 时，简单任务会做很多无效循环。两者结合才是生产级配置。'
+  }
+];
+
+let quizScores=[null,null,null];
+let quizAllDone = false;
+
+function buildQuiz(){
+  const c=document.getElementById('quiz-container'); if(!c||c.innerHTML!=='')return;
+  c.innerHTML=QUIZZES.map((q,qi)=>`
+    <div class="card">
+      <div class="card-body">
+        <div class="quiz-q"><span class="q-num">题目 ${qi+1} / ${QUIZZES.length}</span>${q.q}</div>
+        <div class="qopts" id="qo${qi}">
+          ${q.opts.map((o,oi)=>`<div class="qopt" onclick="answerQ(${qi},${oi})">${o}</div>`).join('')}
+        </div>
+        <div class="qfb" id="qf${qi}"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function answerQ(qi,oi){
+  if(quizScores[qi]!==null)return;
+  const q=QUIZZES[qi], correct=oi===q.correct;
+  quizScores[qi]=correct;
+  document.querySelectorAll(`#qo${qi} .qopt`).forEach((el,i)=>{
+    if(i===oi)el.classList.add(correct?'correct':'wrong');
+    else el.classList.add('disabled');
+  });
+  const fb=document.getElementById('qf'+qi);
+  if(fb){fb.textContent=(correct?'正确。':'再想想——')+q.fb;fb.className='qfb '+(correct?'ok':'bad');}
+  if(quizScores.every(s=>s===true)&&!quizAllDone){
+    quizAllDone=true;
+    setTimeout(()=>{
+      document.getElementById('scenario-eval-card').style.display='';
+    }, 600);
+  }
+}
+
+// ── SCENARIO EVAL (AI assessment) ──
+async function runScenarioEval(){
+  const input = document.getElementById('scenario-input')?.value?.trim();
+  if(!input) return;
+
+  const btn=document.getElementById('eval-btn');
+  btn.textContent='评估中…'; btn.disabled=true;
+
+  const scenarioCtx = selectedScenario>=0 ? `学员的主线场景是：${SCENARIOS[selectedScenario].label}。` : '';
+
+  const prompt=`你是一个 AI Agent 课程导师，专注于金融从业者的 AI 应用。${scenarioCtx}
+
+学员描述了以下工作场景：
+「${input}」
+
+请用 JSON 评估这个场景是否适合用 Agent 解决（只输出 JSON，不要有其他内容）：
+{
+  "verdict": "非常适合" | "适合" | "部分适合" | "不适合",
+  "score": 0-100,
+  "reason": "30字内说明主要理由",
+  "dimensions": [
+    {"name": "重复性", "score": 0-100, "comment": "这个场景重不重复、规律性强不强"},
+    {"name": "可分解性", "score": 0-100, "comment": "任务能否拆成明确的子步骤"},
+    {"name": "可验证性", "score": 0-100, "comment": "结果对不对是否容易判断"},
+    {"name": "数据可获取", "score": 0-100, "comment": "所需数据是否可通过 API 获取"}
+  ],
+  "suggestion": "最有价值的一条改造建议，30字内"
+}`;
+
+  try{
+    const resp = await fetch(ANTHROPIC_API, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:MODEL, max_tokens:600, messages:[{role:'user',content:prompt}]})
+    });
+    const data=await resp.json();
+    const raw=data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    const result=JSON.parse(raw);
+    renderEvalResult(result);
+  }catch(e){
+    document.getElementById('eval-result').innerHTML='<div style="padding:16px;font-size:12px;color:var(--warn)">评估失败，请检查 API 配置或重试</div>';
+    document.getElementById('eval-result').classList.add('show');
+  }finally{
+    btn.textContent='✦ AI 评估适配度'; btn.disabled=false;
+  }
+}
+
+function renderEvalResult(r){
+  const verdictColor={'非常适合':'var(--good)','适合':'var(--good)','部分适合':'var(--warn)','不适合':'var(--bad)'};
+  const verdictBg={'非常适合':'var(--good-bg)','适合':'var(--good-bg)','部分适合':'var(--warn-bg)','不适合':'var(--bad-bg)'};
+  const vc=verdictColor[r.verdict]||'var(--ink)';
+  const vb=verdictBg[r.verdict]||'var(--surface)';
+
+  const el=document.getElementById('eval-result');
+  const hd=document.getElementById('eval-header');
+  const dims=document.getElementById('eval-dims');
+  const sug=document.getElementById('eval-suggest');
+
+  // Score ring SVG
+  const circumference = 2*Math.PI*20;
+  const offset = circumference*(1-r.score/100);
+  hd.style.background=vb;
+  hd.innerHTML=`
+    <svg class="eval-score-ring" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="3"/>
+      <circle cx="24" cy="24" r="20" fill="none" stroke="${vc}" stroke-width="3"
+        stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+        stroke-linecap="round" transform="rotate(-90 24 24)"/>
+      <text x="24" y="28" text-anchor="middle" font-size="12" font-weight="500" fill="${vc}" font-family="DM Mono,monospace">${r.score}</text>
+    </svg>
+    <div>
+      <div class="eval-verdict" style="color:${vc}">${r.verdict}</div>
+      <div class="eval-subtitle">${r.reason}</div>
+    </div>
+  `;
+
+  dims.innerHTML=(r.dimensions||[]).map(d=>{
+    const dc=d.score>=70?'var(--good)':d.score>=40?'var(--warn)':'var(--bad)';
+    const db=d.score>=70?'var(--good-bg)':d.score>=40?'var(--warn-bg)':'var(--bad-bg)';
+    return `<div class="eval-dim">
+      <div class="eval-dim-top">
+        <div class="eval-dim-name">${d.name}</div>
+        <div class="eval-dim-score" style="background:${db};color:${dc}">${d.score}分</div>
+      </div>
+      <div class="eval-dim-text">${d.comment}</div>
+    </div>`;
+  }).join('');
+
+  if(r.suggestion){
+    sug.style.display='';
+    sug.innerHTML=`<div class="eval-suggest-lbl">改造建议</div><div class="eval-suggest-text">${r.suggestion}</div>`;
+  }
+
+  el.classList.add('show');
+
+  // Show completion
+  setTimeout(()=>{
+    document.getElementById('completion-card').classList.add('show');
+  },800);
+}
+
+// ── AI TUTOR ──
+let tutorHistory = [];
+
+async function sendTutorMsg(){
+  const input=document.getElementById('tutor-input');
+  const text=input?.value?.trim();
+  if(!text)return;
+  input.value='';
+
+  const msgs=document.getElementById('tutor-msgs');
+  // user bubble
+  msgs.innerHTML+=`<div class="tutor-msg user"><div class="tutor-avatar">U</div><div class="msg-bubble">${text}</div></div>`;
+  // typing indicator
+  const typingId='typing-'+Date.now();
+  msgs.innerHTML+=`<div class="tutor-msg ai" id="${typingId}"><div class="tutor-avatar">✦</div><div class="msg-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+
+  const btn=document.getElementById('tutor-send-btn');
+  btn.disabled=true;
+
+  tutorHistory.push({role:'user',content:text});
+
+  const scenarioCtx = selectedScenario>=0 ? `学员选择的主线场景是「${SCENARIOS[selectedScenario].label}」。` : '';
+  const systemPrompt=`你是一个 AI Agent 课程导师。学员是金融从业者，正在学习 Agent Loop 的基础概念（Context Window、Loop 机制、终止条件）。${scenarioCtx}用简洁的中文回答，控制在 120 字内。用学员熟悉的金融场景类比。不要使用 Markdown 格式。`;
+
+  try{
+    const resp=await fetch(ANTHROPIC_API,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:MODEL,max_tokens:200,system:systemPrompt,messages:tutorHistory.slice(-6)})
+    });
+    const data=await resp.json();
+    const reply=data.content.map(b=>b.text||'').join('');
+    tutorHistory.push({role:'assistant',content:reply});
+
+    const typingEl=document.getElementById(typingId);
+    if(typingEl) typingEl.querySelector('.msg-bubble').innerHTML=reply.replace(/\n/g,'<br>');
+  }catch(e){
+    const typingEl=document.getElementById(typingId);
+    if(typingEl) typingEl.querySelector('.msg-bubble').innerHTML='暂时无法连接到 AI，请稍后重试。';
+  }
+  btn.disabled=false;
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// ── INIT ──
+applyDiag(-1);
+buildDiagDots();
+calcSandbox();
+</script>
+</body>
+</html>

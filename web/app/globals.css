@@ -1,0 +1,435 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* ═══════════════════════════════════════════════════════════════
+   Design Token System — based on class-style2.md v1.0
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 背景色 ─────────────────────────────────────────────── */
+  --color-background-primary:   #ffffff;
+  --color-background-secondary: #f5f4f0;
+  --color-background-tertiary:  #eceae3;
+  --color-background-info:      #e6f1fb;
+  --color-background-success:   #eaf3de;
+  --color-background-warning:   #faeeda;
+  --color-background-danger:    #fcebeb;
+
+  /* ── 文字色 ─────────────────────────────────────────────── */
+  --color-text-primary:         #1a1a18;
+  --color-text-secondary:       #6b6b66;
+  --color-text-tertiary:        #9e9e99;
+  --color-text-info:            #0c447c;
+  --color-text-success:         #27500a;
+  --color-text-warning:         #633806;
+  --color-text-danger:          #791f1f;
+
+  /* ── 边框色 ─────────────────────────────────────────────── */
+  --color-border-tertiary:      rgba(0,0,0,0.10);
+  --color-border-secondary:     rgba(0,0,0,0.18);
+  --color-border-primary:       rgba(0,0,0,0.28);
+  --color-border-info:          #85b7eb;
+  --color-border-success:       #97c459;
+  --color-border-warning:       #ef9f27;
+  --color-border-danger:        #f09595;
+
+  /* ── 圆角 ───────────────────────────────────────────────── */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-pill: 999px;
+
+  /* ── 间距 ───────────────────────────────────────────────── */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px;
+
+  /* ── 字体 ───────────────────────────────────────────────── */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, "SFMono-Regular", monospace;
+
+  /* ── 过渡 ───────────────────────────────────────────────── */
+  --transition-fast:   0.12s ease;
+  --transition-normal: 0.20s ease;
+  --transition-slow:   0.35s ease;
+
+  /* ── 课程品牌强调色（claude.ai orange） ─────────────────── */
+  --color-accent:       #CF6A25;
+  --color-accent-light: #F5E6D8;
+  --color-accent-dark:  #A85520;
+
+  /* ── Header 半透明背景（深色模式自动切换）───────────────── */
+  --color-background-header: rgba(245,244,240,0.92);
+
+  /* ── SVG 图表专用别名 ────────────────────────────────────── */
+  --p:   var(--color-text-primary);
+  --s:   var(--color-text-secondary);
+  --t:   var(--color-text-tertiary);
+  --bg1: var(--color-background-primary);
+  --bg2: var(--color-background-secondary);
+  --b:   var(--color-border-tertiary);
+}
+
+/* ── 深色模式覆盖 ────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary:   #1e1e1c;
+    --color-background-secondary: #2a2a28;
+    --color-background-tertiary:  #333330;
+    --color-background-info:      #0c2f52;
+    --color-background-success:   #162d06;
+    --color-background-warning:   #2e1a03;
+    --color-background-danger:    #2d0f0f;
+
+    --color-text-primary:         #e8e6de;
+    --color-text-secondary:       #9c9a92;
+    --color-text-tertiary:        #6b6b66;
+    --color-text-info:            #85b7eb;
+    --color-text-success:         #97c459;
+    --color-text-warning:         #ef9f27;
+    --color-text-danger:          #f09595;
+
+  --color-border-tertiary:      rgba(255,255,255,0.10);
+  --color-border-secondary:     rgba(255,255,255,0.18);
+  --color-border-primary:       rgba(255,255,255,0.28);
+
+    --color-accent:       #E07830;
+    --color-accent-light: #3D2010;
+    --color-accent-dark:  #F09040;
+
+    --color-background-header: rgba(30,30,28,0.92);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SVG 彩色节点 ramp 系统（class-style2.md §4.1）
+   用法：<g class="c-purple"> 或 <rect class="c-purple">
+   ═══════════════════════════════════════════════════════════════ */
+
+/* SVG text 基础 class */
+svg text.t  { font-size: 14px; font-weight: 400; fill: var(--p); }
+svg text.ts { font-size: 12px; font-weight: 400; fill: var(--s); }
+svg text.th { font-size: 14px; font-weight: 500; fill: var(--p); }
+
+/* box: 中性矩形节点 */
+svg .box rect, svg rect.box {
+  fill: var(--bg2);
+  stroke: var(--b);
+  stroke-width: 0.5;
+}
+
+/* arr: 标准箭头线 */
+svg .arr { fill: none; stroke: var(--s); stroke-width: 1.5; }
+
+/* leader: 引导虚线 */
+svg .leader { fill: none; stroke: var(--t); stroke-width: 0.5; stroke-dasharray: 4 3; }
+
+/* node: 可点击节点容器 */
+svg .node { cursor: default; }
+svg .node:hover rect, svg .node:hover circle, svg .node:hover ellipse {
+  filter: brightness(0.94);
+}
+svg .node[onclick] { cursor: pointer; }
+
+/* ── Purple ramp ─── */
+svg .c-purple rect, svg .c-purple circle, svg .c-purple ellipse, svg rect.c-purple {
+  fill: #EEEDFE; stroke: #7F77DD; stroke-width: 0.5;
+}
+svg .c-purple text.th { fill: #3C3489; }
+svg .c-purple text.ts { fill: #5e58b0; }
+@media (prefers-color-scheme: dark) {
+  svg .c-purple rect, svg .c-purple circle, svg .c-purple ellipse, svg rect.c-purple {
+    fill: #2d2b5c; stroke: #7F77DD;
+  }
+  svg .c-purple text.th { fill: #c4c0f8; }
+  svg .c-purple text.ts { fill: #a8a3ee; }
+}
+
+/* ── Teal ramp ─── */
+svg .c-teal rect, svg .c-teal circle, svg .c-teal ellipse, svg rect.c-teal {
+  fill: #E1F5EE; stroke: #1D9E75; stroke-width: 0.5;
+}
+svg .c-teal text.th { fill: #085041; }
+svg .c-teal text.ts { fill: #0d705a; }
+@media (prefers-color-scheme: dark) {
+  svg .c-teal rect, svg .c-teal circle, svg .c-teal ellipse, svg rect.c-teal {
+    fill: #0d3328; stroke: #1D9E75;
+  }
+  svg .c-teal text.th { fill: #6ddcb4; }
+  svg .c-teal text.ts { fill: #4dc49a; }
+}
+
+/* ── Blue ramp ─── */
+svg .c-blue rect, svg .c-blue circle, svg .c-blue ellipse, svg rect.c-blue {
+  fill: #E6F1FB; stroke: #378ADD; stroke-width: 0.5;
+}
+svg .c-blue text.th { fill: #0C447C; }
+svg .c-blue text.ts { fill: #1a5e9e; }
+@media (prefers-color-scheme: dark) {
+  svg .c-blue rect, svg .c-blue circle, svg .c-blue ellipse, svg rect.c-blue {
+    fill: #0d2a4a; stroke: #378ADD;
+  }
+  svg .c-blue text.th { fill: #85b7eb; }
+  svg .c-blue text.ts { fill: #6aa3e0; }
+}
+
+/* ── Green ramp ─── */
+svg .c-green rect, svg .c-green circle, svg .c-green ellipse, svg rect.c-green {
+  fill: #EAF3DE; stroke: #639922; stroke-width: 0.5;
+}
+svg .c-green text.th { fill: #27500A; }
+svg .c-green text.ts { fill: #3d6c14; }
+@media (prefers-color-scheme: dark) {
+  svg .c-green rect, svg .c-green circle, svg .c-green ellipse, svg rect.c-green {
+    fill: #162d06; stroke: #639922;
+  }
+  svg .c-green text.th { fill: #97c459; }
+  svg .c-green text.ts { fill: #7aae38; }
+}
+
+/* ── Amber ramp ─── */
+svg .c-amber rect, svg .c-amber circle, svg .c-amber ellipse, svg rect.c-amber {
+  fill: #FAEEDA; stroke: #BA7517; stroke-width: 0.5;
+}
+svg .c-amber text.th { fill: #633806; }
+svg .c-amber text.ts { fill: #8a5010; }
+@media (prefers-color-scheme: dark) {
+  svg .c-amber rect, svg .c-amber circle, svg .c-amber ellipse, svg rect.c-amber {
+    fill: #2e1a03; stroke: #BA7517;
+  }
+  svg .c-amber text.th { fill: #ef9f27; }
+  svg .c-amber text.ts { fill: #d4891a; }
+}
+
+/* ── Coral ramp ─── */
+svg .c-coral rect, svg .c-coral circle, svg .c-coral ellipse, svg rect.c-coral {
+  fill: #FAECE7; stroke: #D85A30; stroke-width: 0.5;
+}
+svg .c-coral text.th { fill: #712B13; }
+svg .c-coral text.ts { fill: #9a3d1c; }
+@media (prefers-color-scheme: dark) {
+  svg .c-coral rect, svg .c-coral circle, svg .c-coral ellipse, svg rect.c-coral {
+    fill: #2e1208; stroke: #D85A30;
+  }
+  svg .c-coral text.th { fill: #f0a080; }
+  svg .c-coral text.ts { fill: #d4856a; }
+}
+
+/* ── Red ramp ─── */
+svg .c-red rect, svg .c-red circle, svg .c-red ellipse, svg rect.c-red {
+  fill: #FCEBEB; stroke: #E24B4A; stroke-width: 0.5;
+}
+svg .c-red text.th { fill: #791F1F; }
+svg .c-red text.ts { fill: #9e2c2c; }
+@media (prefers-color-scheme: dark) {
+  svg .c-red rect, svg .c-red circle, svg .c-red ellipse, svg rect.c-red {
+    fill: #2d0f0f; stroke: #E24B4A;
+  }
+  svg .c-red text.th { fill: #f09595; }
+  svg .c-red text.ts { fill: #e07070; }
+}
+
+/* ── Gray ramp ─── */
+svg .c-gray rect, svg .c-gray circle, svg .c-gray ellipse, svg rect.c-gray {
+  fill: #F1EFE8; stroke: #888780; stroke-width: 0.5;
+}
+svg .c-gray text.th { fill: #444441; }
+svg .c-gray text.ts { fill: #666663; }
+@media (prefers-color-scheme: dark) {
+  svg .c-gray rect, svg .c-gray circle, svg .c-gray ellipse, svg rect.c-gray {
+    fill: #2a2a28; stroke: #888780;
+  }
+  svg .c-gray text.th { fill: #c8c6be; }
+  svg .c-gray text.ts { fill: #a0a098; }
+}
+
+/* ── Pink ramp ─── */
+svg .c-pink rect, svg .c-pink circle, svg .c-pink ellipse, svg rect.c-pink {
+  fill: #FBEAF0; stroke: #D4537E; stroke-width: 0.5;
+}
+svg .c-pink text.th { fill: #72243E; }
+svg .c-pink text.ts { fill: #9c3358; }
+@media (prefers-color-scheme: dark) {
+  svg .c-pink rect, svg .c-pink circle, svg .c-pink ellipse, svg rect.c-pink {
+    fill: #2a0e1a; stroke: #D4537E;
+  }
+  svg .c-pink text.th { fill: #f0a0be; }
+  svg .c-pink text.ts { fill: #d47ea0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Base & Typography
+   ═══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Prose / Article Typography ──────────────────────────────── */
+.prose {
+  color: var(--color-text-primary);
+  max-width: none;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+/* Override Tailwind typography defaults */
+.prose :where(h1, h2, h3, h4, h5, h6) {
+  font-weight: 500 !important;
+}
+
+.prose p {
+  font-size: 14px;
+  color: var(--color-text-primary);
+  margin-bottom: 1rem;
+}
+
+.prose a { color: var(--color-accent); text-decoration: none; font-weight: 500; }
+.prose a:hover { text-decoration: underline; }
+
+.prose strong { font-weight: 500; color: var(--color-text-primary); }
+
+.prose ul, .prose ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+.prose li { margin-bottom: 0.25rem; font-size: 14px; }
+.prose ul li { list-style-type: disc; }
+
+.prose code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--color-background-tertiary);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.4em;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.prose pre {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.prose pre code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-text-primary);
+  white-space: pre;
+}
+
+.prose blockquote {
+  border-left: 3px solid var(--color-accent);
+  margin: 1.25rem 0;
+  padding: 0.625rem 1rem;
+  background: var(--color-accent-light);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--color-text-secondary);
+  font-style: normal;
+}
+
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--color-border-tertiary);
+  margin: 2rem 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Focus & Accessibility
+   ═══════════════════════════════════════════════════════════════ */
+
+:focus-visible {
+  outline: 2px solid var(--color-border-info);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Scrollbar
+   ═══════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-background-tertiary); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-secondary); }
+
+/* ═══════════════════════════════════════════════════════════════
+   Animations
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes shimmer {
+  to { background-position: 200% center; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.animate-fade-in  { animation: fade-in  0.20s ease both; }
+.animate-slide-up { animation: slide-up 0.30s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.cursor-blink     { animation: blink    1s step-end infinite; }
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Homepage chapter card hover ────────────────────────────── */
+.chapter-card article {
+  will-change: transform;
+}
+.chapter-card:hover article {
+  transform: translateY(-2px);
+  border-color: var(--color-border-secondary) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* ── Homepage chapter grid responsive ───────────────────────── */
+@media (max-width: 720px) {
+  .chapter-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .coming-soon-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .course-card-inner {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Homepage course card hover ─────────────────────────────── */
+article.course-card {
+  will-change: transform;
+  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+article.course-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-border-secondary) !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.07);
+}
