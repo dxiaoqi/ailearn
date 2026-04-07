@@ -1,182 +1,28 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { LocaleSwitcher } from "@/components/LocaleSwitcher"
+import {
+  getPromptChapterStyles,
+  getPromptChapters,
+} from "@/lib/i18n/course-catalog"
+import { getLocale } from "@/lib/i18n/locale"
+import { getMessages } from "@/lib/i18n/messages"
 
-export const metadata: Metadata = {
-  title: "Claude Prompt Engineering · 课程详情",
-  description: "从随意写提示词到系统化设计，10 章独立成章的实战课程",
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale()
+  const m = getMessages(locale)
+  return { title: m.promptCourse.metaTitle, description: m.promptCourse.metaDescription }
 }
 
-type Layer = "基础" | "进阶" | "综合"
+export default async function PromptEngineeringCoursePage() {
+  const locale = await getLocale()
+  const m = getMessages(locale)
+  const chapters = getPromptChapters(locale)
+  const layerStyle = getPromptChapterStyles(locale) as Record<
+    string,
+    { color: string; bg: string; border: string }
+  >
 
-interface Chapter {
-  num: string
-  slug: string
-  title: string
-  subtitle: string
-  layer: Layer
-  difficulty: string
-  duration: string
-  outcomes: string[]
-  exercises: number
-}
-
-const chapters: Chapter[] = [
-  {
-    num: "01",
-    slug: "module-1/01-prompt-structure",
-    title: "提示词基础结构",
-    subtitle: "五要素框架 · 从随意写到有意识地设计",
-    layer: "基础",
-    difficulty: "入门",
-    duration: "30 分钟",
-    exercises: 2,
-    outcomes: [
-      "识别一个提示词缺少哪些要素",
-      "将任意差的提示词改写为结构化版本",
-      "在自己的工作场景中套用五要素框架",
-    ],
-  },
-  {
-    num: "02",
-    slug: "module-1/02-xml-isolation",
-    title: "XML 与信息隔离",
-    subtitle: "系统提示词 vs 用户提示词 · 动静态内容分离",
-    layer: "基础",
-    difficulty: "入门",
-    duration: "35 分钟",
-    exercises: 2,
-    outcomes: [
-      "判断哪些内容放系统提示词、哪些放用户提示词",
-      "用 XML 标签将指令与数据彻底分离",
-      "写出可多次复用的提示词模板（带占位符）",
-    ],
-  },
-  {
-    num: "03",
-    slug: "module-1/03-step-instructions",
-    title: "步骤指令与分析顺序",
-    subtitle: "规定思考路径 · 把复杂任务拆解为可执行步骤",
-    layer: "基础",
-    difficulty: "入门",
-    duration: "30 分钟",
-    exercises: 2,
-    outcomes: [
-      "识别哪类任务需要步骤指令",
-      "写出逻辑顺序合理的步骤序列",
-      "用步骤指令处理多维度分析任务",
-    ],
-  },
-  {
-    num: "04",
-    slug: "module-1/04-fewshot",
-    title: "Few-shot 示例注入",
-    subtitle: "把人类判断力装进提示词 · 处理边缘情况的最优解",
-    layer: "基础",
-    difficulty: "入门→中级",
-    duration: "40 分钟",
-    exercises: 2,
-    outcomes: [
-      "判断什么时候必须用示例、什么时候不需要",
-      "写出能有效传递判断逻辑的示例",
-      "用 2-3 个示例覆盖任务的关键边界情况",
-    ],
-  },
-  {
-    num: "05",
-    slug: "module-1/05-output-format",
-    title: "输出格式控制",
-    subtitle: "预填充 · JSON · 格式化输出 · 去掉废话开头",
-    layer: "基础",
-    difficulty: "中级",
-    duration: "35 分钟",
-    exercises: 2,
-    outcomes: [
-      "用预填充（Prefill）强制模型按格式输出",
-      "让模型输出可直接解析的 JSON",
-      "消除模型的废话开头，让输出直接可用",
-    ],
-  },
-  {
-    num: "06",
-    slug: "module-1/06-system-prompt-production",
-    title: "系统提示词与生产部署",
-    subtitle: "从一次性对话到稳定可复用的 AI 功能",
-    layer: "进阶",
-    difficulty: "中级",
-    duration: "40 分钟",
-    exercises: 2,
-    outcomes: [
-      "设计生产级别的系统提示词结构",
-      "区分哪些指令放系统提示词 vs 动态注入",
-      "用缓存机制降低延迟和成本",
-    ],
-  },
-  {
-    num: "07",
-    slug: "module-1/07-agent-intro",
-    title: "智能体提示词入门",
-    subtitle: "什么是 Agent · 适合和不适合的场景 · 核心设计原则",
-    layer: "进阶",
-    difficulty: "中级→高级",
-    duration: "45 分钟",
-    exercises: 2,
-    outcomes: [
-      "判断一个任务是否适合用智能体来处理",
-      "理解智能体提示词与普通提示词的根本区别",
-      "写出智能体系统提示词的基础框架",
-    ],
-  },
-  {
-    num: "08",
-    slug: "module-1/08-agent-tools",
-    title: "智能体工具设计",
-    subtitle: "工具描述 · 命名规则 · 避免功能重叠 · 参数设计",
-    layer: "进阶",
-    difficulty: "高级",
-    duration: "40 分钟",
-    exercises: 2,
-    outcomes: [
-      "写出让智能体能正确使用的工具描述",
-      "识别并修复工具描述中的常见问题",
-      "设计功能边界清晰、没有重叠的工具集",
-    ],
-  },
-  {
-    num: "09",
-    slug: "module-1/09-context-management",
-    title: "上下文管理策略",
-    subtitle: "压缩 · 外部记忆 · 子智能体 · 长任务保质量",
-    layer: "进阶",
-    difficulty: "高级",
-    duration: "40 分钟",
-    exercises: 1,
-    outcomes: [
-      "判断长任务中哪种上下文管理策略最合适",
-      "在提示词中内置压缩触发机制",
-      "设计子智能体分工方案",
-    ],
-  },
-]
-
-const layerStyle: Record<Layer, { color: string; bg: string; border: string }> = {
-  基础: {
-    color: "var(--color-accent)",
-    bg: "var(--color-accent-light)",
-    border: "var(--color-border-warning)",
-  },
-  进阶: {
-    color: "var(--color-text-info)",
-    bg: "var(--color-background-info)",
-    border: "var(--color-border-info)",
-  },
-  综合: {
-    color: "var(--color-text-success)",
-    bg: "var(--color-background-success)",
-    border: "var(--color-border-success)",
-  },
-}
-
-export default function PromptEngineeringCoursePage() {
   return (
     <div
       style={{
@@ -186,7 +32,6 @@ export default function PromptEngineeringCoursePage() {
         fontFamily: "var(--font-sans)",
       }}
     >
-      {/* ── 顶部导航 ── */}
       <header
         style={{
           position: "sticky",
@@ -217,7 +62,7 @@ export default function PromptEngineeringCoursePage() {
               textDecoration: "none",
             }}
           >
-            课程中心
+            {m.nav.courseCenter}
           </Link>
           <span style={{ color: "var(--color-border-secondary)", fontSize: 13 }}>/</span>
           <span
@@ -229,7 +74,7 @@ export default function PromptEngineeringCoursePage() {
           >
             Claude Prompt Engineering
           </span>
-          <div style={{ marginLeft: "auto" }}>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
             <Link
               href="/lesson/module-1/01-prompt-structure"
               style={{
@@ -239,13 +84,18 @@ export default function PromptEngineeringCoursePage() {
                 fontWeight: 500,
               }}
             >
-              开始学习 →
+              {m.promptCourse.navStart}
             </Link>
+            <LocaleSwitcher
+              locale={locale}
+              ariaLabel={m.localeSwitcher.aria}
+              labelZh={m.localeSwitcher.zh}
+              labelEn={m.localeSwitcher.en}
+            />
           </div>
         </div>
       </header>
 
-      {/* ── Hero ── */}
       <section
         style={{
           maxWidth: 1120,
@@ -270,9 +120,9 @@ export default function PromptEngineeringCoursePage() {
               letterSpacing: "0.02em",
             }}
           >
-            <span style={{ opacity: 0.7 }}>Anthropic 官方方法论</span>
+            <span style={{ opacity: 0.7 }}>{m.promptCourse.badgeLeft}</span>
             <span>·</span>
-            <span>10 章完整课程</span>
+            <span>{m.promptCourse.badgeRight}</span>
           </div>
 
           <h1
@@ -285,9 +135,9 @@ export default function PromptEngineeringCoursePage() {
               color: "var(--color-text-primary)",
             }}
           >
-            Prompt Engineering
+            {m.promptCourse.heroTitle}
             <br />
-            <span style={{ color: "var(--color-accent)" }}>从入门到智能体</span>
+            <span style={{ color: "var(--color-accent)" }}>{m.promptCourse.heroSubtitle}</span>
           </h1>
 
           <p
@@ -299,7 +149,7 @@ export default function PromptEngineeringCoursePage() {
               maxWidth: 540,
             }}
           >
-            把 Anthropic 官方 Prompt Engineering 核心方法论，转化为可立即落地的实战教程。每章独立完整，可按需跳读；每个概念配套真实练习场景，学完即能用。
+            {m.promptCourse.heroLead}
           </p>
 
           <Link
@@ -318,12 +168,11 @@ export default function PromptEngineeringCoursePage() {
               letterSpacing: "-0.01em",
             }}
           >
-            从第一章开始 →
+            {m.promptCourse.ctaStart}
           </Link>
         </div>
       </section>
 
-      {/* ── 数据统计 ── */}
       <section style={{ maxWidth: 1120, margin: "0 auto", padding: "0 24px 48px" }}>
         <div
           style={{
@@ -337,10 +186,10 @@ export default function PromptEngineeringCoursePage() {
           }}
         >
           {[
-            { value: "9", label: "章节" },
-            { value: "26", label: "知识卡片" },
-            { value: "17", label: "实战练习" },
-            { value: "~6 小时", label: "总学习时长" },
+            { value: "9", label: m.promptCourse.stats.chapters },
+            { value: "26", label: m.promptCourse.stats.cards },
+            { value: "17", label: m.promptCourse.stats.practice },
+            { value: "~6h", label: m.promptCourse.stats.hours },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -370,7 +219,6 @@ export default function PromptEngineeringCoursePage() {
         </div>
       </section>
 
-      {/* ── 章节列表 ── */}
       <section style={{ maxWidth: 1120, margin: "0 auto", padding: "0 24px 96px" }}>
         <h2
           style={{
@@ -382,7 +230,7 @@ export default function PromptEngineeringCoursePage() {
             margin: "0 0 16px",
           }}
         >
-          全部章节
+          {m.promptCourse.sectionAll}
         </h2>
 
         <div
@@ -425,7 +273,7 @@ export default function PromptEngineeringCoursePage() {
                         color: "var(--color-text-tertiary)",
                       }}
                     >
-                      第 {ch.num} 章
+                      {m.promptCourse.chapterLabel(ch.num)}
                     </span>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span
@@ -519,12 +367,10 @@ export default function PromptEngineeringCoursePage() {
                     }}
                   >
                     <span style={{ fontSize: 12, color: "var(--color-text-tertiary)" }}>
-                      {ch.exercises} 个练习 · {ch.difficulty}
+                      {m.promptCourse.exercisesMeta(ch.exercises, ch.difficulty)}
                     </span>
-                    <span
-                      style={{ fontSize: 13, color: "var(--color-accent)", fontWeight: 500 }}
-                    >
-                      开始 →
+                    <span style={{ fontSize: 13, color: "var(--color-accent)", fontWeight: 500 }}>
+                      {m.promptCourse.ctaCard}
                     </span>
                   </div>
                 </article>
@@ -542,7 +388,7 @@ export default function PromptEngineeringCoursePage() {
         }}
       >
         <p style={{ fontSize: 12, color: "var(--color-text-tertiary)", margin: 0 }}>
-          基于 Anthropic 官方 Prompt Engineering 方法论 · 以练带学 · 章节独立
+          {m.promptCourse.footer}
         </p>
       </footer>
     </div>

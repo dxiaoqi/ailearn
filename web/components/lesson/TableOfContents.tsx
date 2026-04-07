@@ -5,9 +5,10 @@ import type { TocItem } from "@/lib/types"
 
 interface Props {
   items: TocItem[]
+  heading: string
 }
 
-export function TableOfContents({ items }: Props) {
+export function TableOfContents({ items, heading }: Props) {
   const [activeId, setActiveId] = useState<string>("")
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export function TableOfContents({ items }: Props) {
         className="text-xs uppercase tracking-wider mb-3"
         style={{ fontWeight: 500, color: "var(--color-text-tertiary)" }}
       >
-        目录
+        {heading}
       </p>
       <ul className="space-y-0.5">
         {items.map((item) => (

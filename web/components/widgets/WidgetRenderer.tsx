@@ -7,6 +7,7 @@ import { CalloutWidget } from "./CalloutWidget"
 import { SandboxWidget } from "./SandboxWidget"
 import { AiChatWidget } from "./AiChatWidget"
 import { ScenarioEvalWidget } from "./ScenarioEvalWidget"
+import { CodePlaygroundWidget } from "./CodePlaygroundWidget"
 import type {
   BeforeAfterConfig,
   ChecklistConfig,
@@ -17,6 +18,7 @@ import type {
   SandboxConfig,
   AiChatConfig,
   ScenarioEvalConfig,
+  CodePlaygroundConfig,
 } from "@/lib/types"
 
 interface Props {
@@ -46,6 +48,8 @@ export function WidgetRenderer({ type, config, children }: Props) {
       return <AiChatWidget config={config as AiChatConfig}>{children}</AiChatWidget>
     case "scenario-eval":
       return <ScenarioEvalWidget config={config as ScenarioEvalConfig}>{children}</ScenarioEvalWidget>
+    case "code-playground":
+      return <CodePlaygroundWidget config={config as CodePlaygroundConfig} />
     default:
       return (
         <div

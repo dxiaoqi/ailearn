@@ -1,20 +1,33 @@
 import Link from "next/link"
+import type { Locale } from "@/lib/i18n/locale"
+import type { Messages } from "@/lib/i18n/messages"
 import type { LessonMeta, TocItem } from "@/lib/types"
-import { TableOfContents } from "./TableOfContents"
+import { LocaleSwitcher } from "@/components/LocaleSwitcher"
 import { ExpertAdvisor } from "./ExpertAdvisor"
+import { TableOfContents } from "./TableOfContents"
 
-// Maps module id → course URL
 const moduleToCourse: Record<string, string> = {
   "module-1": "/courses/prompt-engineering",
+  "module-2": "/courses/agent-engineering",
 }
 
 interface Props {
   meta: LessonMeta
   toc: TocItem[]
   children: React.ReactNode
+  locale: Locale
+  messages: Messages
+  usedFallback?: boolean
 }
 
-export function LessonLayout({ meta, toc, children }: Props) {
+export function LessonLayout({
+  meta,
+  toc,
+  children,
+  locale,
+  messages: m,
+  usedFallback,
+}: Props) {
   return (
     <div className="min-h-screen" style={{ background: "var(--color-background-secondary)" }}>
       {/* Top nav */}
@@ -33,7 +46,7 @@ export function LessonLayout({ meta, toc, children }: Props) {
             href="/"
             style={{ color: "var(--color-text-tertiary)", textDecoration: "none" }}
           >
-            课程中心
+            {m.lesson.breadcrumbHome}
           </Link>
           <span style={{ color: "var(--color-border-secondary)" }}>/</span>
           {moduleToCourse[meta.module] ? (
@@ -56,6 +69,12 @@ export function LessonLayout({ meta, toc, children }: Props) {
         </div>
 
         <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+          <LocaleSwitcher
+            locale={locale}
+            ariaLabel={m.localeSwitcher.aria}
+            labelZh={m.localeSwitcher.zh}
+            labelEn={m.localeSwitcher.en}
+          />
           {/* Duration badge */}
           <span
             className="hidden sm:flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
@@ -94,7 +113,7 @@ export function LessonLayout({ meta, toc, children }: Props) {
         <div className="flex gap-12 py-10">
           {/* Left: TOC */}
           <aside className="hidden lg:block w-48 flex-shrink-0">
-            <TableOfContents items={toc} />
+            <TableOfContents items={toc} heading={m.lesson.tocHeading} />
           </aside>
 
           {/* Center: Article */}
@@ -142,6 +161,19 @@ export function LessonLayout({ meta, toc, children }: Props) {
               )}
             </div>
 
+            {usedFallback && (
+              <div
+                className="mb-8 rounded-lg px-4 py-3 text-sm"
+                style={{
+                  background: "var(--color-background-info)",
+                  border: "0.5px solid var(--color-border-info)",
+                  color: "var(--color-text-secondary)",
+                }}
+              >
+                {m.lesson.fallbackBanner}
+              </div>
+            )}
+
             {/* Content */}
             {children}
 
@@ -150,7 +182,7 @@ export function LessonLayout({ meta, toc, children }: Props) {
               className="mt-12 pt-6 flex items-center justify-between text-sm"
               style={{ borderTop: "0.5px solid var(--color-border-tertiary)" }}
             >
-              <span style={{ color: "var(--color-text-tertiary)" }}>本文结束</span>
+              <span style={{ color: "var(--color-text-tertiary)" }}>{m.lesson.articleEnd}</span>
               {meta.expert && (
                 <span
                   className="text-xs px-3 py-1.5 rounded-full cursor-default"
@@ -160,7 +192,7 @@ export function LessonLayout({ meta, toc, children }: Props) {
                     fontWeight: 500,
                   }}
                 >
-                  有疑问？按 ⌘K 咨询 {meta.expert.name}
+                  {m.lesson.expertHint(meta.expert.name)}
                 </span>
               )}
             </div>
@@ -169,7 +201,7 @@ export function LessonLayout({ meta, toc, children }: Props) {
       </div>
 
       {/* Expert advisor (floating) */}
-      {meta.expert && <ExpertAdvisor expert={meta.expert} />}
+      {meta.expert && <ExpertAdvisor expert={meta.expert} ui={m.expertUi} />}
     </div>
   )
 }

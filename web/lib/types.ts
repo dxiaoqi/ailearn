@@ -14,6 +14,7 @@ export type WidgetType =
   | "sandbox"
   | "ai-chat"
   | "scenario-eval"
+  | "code-playground"
 
 export interface WidgetConfig {
   type: WidgetType
@@ -155,6 +156,32 @@ export interface ScenarioEvalConfig {
   buttonLabel?: string
   systemPrompt?: string
   dimensions?: string[]
+}
+
+// ── Code Playground ───────────────────────────────────────────────
+export interface CodePlaygroundSlot {
+  id: string
+  placeholder?: string
+  default?: string
+  tooltip?: string
+}
+
+export interface CodePlaygroundFile {
+  path: string
+  code: string
+  language?: string
+  slots?: CodePlaygroundSlot[]
+  active?: boolean
+}
+
+export interface CodePlaygroundConfig {
+  title?: string
+  hint?: string
+  files: CodePlaygroundFile[]
+  systemPrompt?: string
+  mode?: "sandbox" | "ai"
+  autoRun?: boolean
+  outputHeight?: number
 }
 
 // ─── Content Types ────────────────────────────────────────────────

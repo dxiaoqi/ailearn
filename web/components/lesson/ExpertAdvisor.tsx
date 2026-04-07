@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import type { Messages } from "@/lib/i18n/messages"
 import type { ExpertConfig } from "@/lib/types"
 
 interface Message {
@@ -10,12 +11,13 @@ interface Message {
 
 interface Props {
   expert: ExpertConfig
+  ui: Messages["expertUi"]
 }
 
-export function ExpertAdvisor({ expert }: Props) {
+export function ExpertAdvisor({ expert, ui }: Props) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: expert.intro ?? `你好！我是 ${expert.name}，有什么问题可以问我。` },
+    { role: "assistant", content: expert.intro ?? ui.welcomeFallback(expert.name) },
   ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -62,7 +64,7 @@ export function ExpertAdvisor({ expert }: Props) {
         }),
       })
 
-      if (!res.ok || !res.body) throw new Error("请求失败")
+      if (!res.ok || !res.body) throw new Error(ui.errorRequest)
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
@@ -83,12 +85,12 @@ export function ExpertAdvisor({ expert }: Props) {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "抱歉，出了点问题，请稍后再试。" },
+        { role: "assistant", content: ui.chatErrorRetry },
       ])
     } finally {
       setLoading(false)
     }
-  }, [input, loading, messages, expert.systemPrompt])
+  }, [input, loading, messages, expert.systemPrompt, ui])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -102,7 +104,7 @@ export function ExpertAdvisor({ expert }: Props) {
       {/* Floating trigger button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        title="咨询专家顾问 (⌘K)"
+        title={ui.floatingTitle}
         className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full text-sm transition-all"
         style={{
           fontWeight: 500,
@@ -120,7 +122,7 @@ export function ExpertAdvisor({ expert }: Props) {
           />
           <circle cx="8" cy="12" r="0.75" fill="currentColor" />
         </svg>
-        <span className="hidden sm:block">{open ? "收起" : expert.name}</span>
+        <span className="hidden sm:block">{open ? ui.collapse : expert.name}</span>
         <kbd
           className="hidden sm:flex items-center opacity-70 ml-0.5"
           style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem" }}
@@ -172,14 +174,14 @@ export function ExpertAdvisor({ expert }: Props) {
                       {expert.name}
                     </p>
                     <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-                      本课专属顾问
+                      {ui.badge}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setOpen(false)}
                   className="w-7 h-7 flex items-center justify-center rounded-lg cursor-pointer"
-                  aria-label="关闭对话框"
+                  aria-label={ui.closeDialog}
                   style={{ color: "var(--color-text-tertiary)" }}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -270,7 +272,7 @@ export function ExpertAdvisor({ expert }: Props) {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={`问 ${expert.name} 任何关于本课的问题…`}
+                    placeholder={ui.askPlaceholder(expert.name)}
                     rows={1}
                     className="flex-1 text-sm outline-none resize-none bg-transparent"
                     style={{ color: "var(--color-text-primary)", maxHeight: 120, lineHeight: 1.6 }}
@@ -279,7 +281,7 @@ export function ExpertAdvisor({ expert }: Props) {
                     onClick={send}
                     disabled={!input.trim() || loading}
                     className="flex-shrink-0 rounded-lg flex items-center justify-center cursor-pointer"
-                    aria-label="发送"
+                    aria-label={ui.sendAria}
                     style={{
                       width: 32,
                       height: 32,
@@ -307,7 +309,7 @@ export function ExpertAdvisor({ expert }: Props) {
                   </button>
                 </div>
                 <p className="text-center text-xs mt-2" style={{ color: "var(--color-text-tertiary)" }}>
-                  Enter 发送 · Shift+Enter 换行 · ⌘K 收起
+                  {ui.shortcutHint}
                 </p>
               </div>
             </div>

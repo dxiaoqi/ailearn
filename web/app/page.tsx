@@ -1,65 +1,25 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { LocaleSwitcher } from "@/components/LocaleSwitcher"
+import { getComingSoon, getHomeCourses } from "@/lib/i18n/course-catalog"
+import { getLocale } from "@/lib/i18n/locale"
+import { getMessages } from "@/lib/i18n/messages"
 
-export const metadata: Metadata = {
-  title: "课程中心",
-  description: "AI 实战课程，以练带学，学完即用",
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale()
+  const m = getMessages(locale)
+  return {
+    title: m.home.metaTitle,
+    description: m.home.metaDescription,
+  }
 }
 
-// ── 课程数据 ──────────────────────────────────────────────────────
+export default async function HomePage() {
+  const locale = await getLocale()
+  const m = getMessages(locale)
+  const courses = getHomeCourses(locale)
+  const comingSoon = getComingSoon(locale)
 
-interface Course {
-  slug: string
-  title: string
-  subtitle: string
-  description: string
-  tags: string[]
-  stats: { value: string; label: string }[]
-  firstLesson: string
-  available: boolean
-  accentColor: string
-  accentBg: string
-  accentBorder: string
-}
-
-const courses: Course[] = [
-  {
-    slug: "prompt-engineering",
-    title: "Claude Prompt Engineering",
-    subtitle: "从入门到智能体",
-    description:
-      "把 Anthropic 官方 Prompt Engineering 核心方法论，转化为可立即落地的实战教程。从五要素框架到智能体设计，每章独立完整，学完即能用。",
-    tags: ["Anthropic 官方方法论", "10 章", "20 个练习"],
-    stats: [
-      { value: "10", label: "章节" },
-      { value: "29", label: "知识卡片" },
-      { value: "20", label: "练习" },
-      { value: "~7h", label: "时长" },
-    ],
-    firstLesson: "/lesson/module-1/01-prompt-structure",
-    available: true,
-    accentColor: "var(--color-accent)",
-    accentBg: "var(--color-accent-light)",
-    accentBorder: "var(--color-border-warning)",
-  },
-]
-
-const comingSoon = [
-  {
-    title: "RAG 系统设计",
-    subtitle: "检索增强生成的工程实践",
-    description: "从向量检索到 Rerank，设计可落地的企业级 RAG 系统。",
-  },
-  {
-    title: "AI 产品设计",
-    subtitle: "从需求到提示词的完整链路",
-    description: "产品经理视角的 AI 功能设计方法论，从用户需求到系统提示词。",
-  },
-]
-
-// ── Page ─────────────────────────────────────────────────────────
-
-export default function HomePage() {
   return (
     <div
       style={{
@@ -69,7 +29,6 @@ export default function HomePage() {
         fontFamily: "var(--font-sans)",
       }}
     >
-      {/* ── 顶部导航 ── */}
       <header
         style={{
           position: "sticky",
@@ -90,6 +49,7 @@ export default function HomePage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 16,
           }}
         >
           <Link
@@ -102,12 +62,17 @@ export default function HomePage() {
               letterSpacing: "-0.02em",
             }}
           >
-            课程中心
+            {m.nav.courseCenter}
           </Link>
+          <LocaleSwitcher
+            locale={locale}
+            ariaLabel={m.localeSwitcher.aria}
+            labelZh={m.localeSwitcher.zh}
+            labelEn={m.localeSwitcher.en}
+          />
         </div>
       </header>
 
-      {/* ── Hero ── */}
       <section
         style={{
           maxWidth: 1120,
@@ -125,9 +90,9 @@ export default function HomePage() {
             color: "var(--color-text-primary)",
           }}
         >
-          以练带学，
+          {m.home.heroLine1}
           <br />
-          <span style={{ color: "var(--color-accent)" }}>学完即用</span>
+          <span style={{ color: "var(--color-accent)" }}>{m.home.heroAccent}</span>
         </h1>
         <p
           style={{
@@ -138,11 +103,10 @@ export default function HomePage() {
             maxWidth: 480,
           }}
         >
-          每门课程聚焦一个实战主题，配套真实场景练习，可直接应用到工作中。
+          {m.home.heroSub}
         </p>
       </section>
 
-      {/* ── 可用课程 ── */}
       <section
         style={{
           maxWidth: 1120,
@@ -160,7 +124,7 @@ export default function HomePage() {
             margin: "0 0 16px",
           }}
         >
-          可学习
+          {m.home.sectionAvailable}
         </h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -184,9 +148,7 @@ export default function HomePage() {
                 }}
                 className="course-card-inner"
               >
-                {/* 左：课程信息 */}
                 <div>
-                  {/* 标签行 */}
                   <div
                     style={{
                       display: "flex",
@@ -214,7 +176,6 @@ export default function HomePage() {
                     ))}
                   </div>
 
-                  {/* 标题 */}
                   <h3
                     style={{
                       fontSize: 22,
@@ -249,7 +210,6 @@ export default function HomePage() {
                     {course.description}
                   </p>
 
-                  {/* 数据统计 */}
                   <div style={{ display: "flex", gap: 24 }}>
                     {course.stats.map((stat) => (
                       <div key={stat.label}>
@@ -273,7 +233,6 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* 右：进入按钮 */}
                 <div
                   style={{
                     display: "flex",
@@ -299,7 +258,7 @@ export default function HomePage() {
                       textDecoration: "none",
                     }}
                   >
-                    查看课程 →
+                    {m.home.viewCourse}
                   </Link>
                   <Link
                     href={course.firstLesson}
@@ -309,7 +268,7 @@ export default function HomePage() {
                       textDecoration: "none",
                     }}
                   >
-                    直接进入第一章 ↗
+                    {m.home.jumpFirstLesson}
                   </Link>
                 </div>
               </div>
@@ -318,7 +277,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 即将上线 ── */}
       <section
         style={{
           maxWidth: 1120,
@@ -336,7 +294,7 @@ export default function HomePage() {
             margin: "0 0 16px",
           }}
         >
-          即将上线
+          {m.home.sectionComingSoon}
         </h2>
 
         <div
@@ -372,7 +330,7 @@ export default function HomePage() {
                   textTransform: "uppercase",
                 }}
               >
-                即将上线
+                {m.home.badgeComingSoon}
               </div>
               <h3
                 style={{
@@ -409,7 +367,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Footer ── */}
       <footer
         style={{
           borderTop: "0.5px solid var(--color-border-tertiary)",
@@ -418,7 +375,7 @@ export default function HomePage() {
         }}
       >
         <p style={{ fontSize: 12, color: "var(--color-text-tertiary)", margin: 0 }}>
-          以练带学 · 章节独立 · 学完即用
+          {m.home.footer}
         </p>
       </footer>
     </div>

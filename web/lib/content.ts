@@ -1,6 +1,7 @@
 import fs from "fs"
 import path from "path"
 import matter from "gray-matter"
+import type { Locale } from "./i18n/locale"
 import type { LessonMeta } from "./types"
 
 const CONTENT_DIR = path.join(process.cwd(), "content")
@@ -8,10 +9,30 @@ const CONTENT_DIR = path.join(process.cwd(), "content")
 export interface LessonData {
   meta: LessonMeta
   content: string
+  /** True when English was requested but only the Chinese manuscript exists */
+  usedFallback?: boolean
 }
 
-export function getLessonData(module: string, lesson: string): LessonData {
-  const filePath = path.join(CONTENT_DIR, module, `${lesson}.md`)
+export function getLessonData(
+  module: string,
+  lesson: string,
+  locale: Locale = "zh"
+): LessonData {
+  const baseZh = path.join(CONTENT_DIR, module, `${lesson}.md`)
+  const baseEn = path.join(CONTENT_DIR, module, `${lesson}.en.md`)
+
+  let filePath = baseZh
+  let usedFallback: boolean | undefined
+
+  if (locale === "en") {
+    if (fs.existsSync(baseEn)) {
+      filePath = baseEn
+    } else {
+      filePath = baseZh
+      usedFallback = true
+    }
+  }
+
   const raw = fs.readFileSync(filePath, "utf-8")
   const { data, content } = matter(raw)
 
@@ -25,7 +46,7 @@ export function getLessonData(module: string, lesson: string): LessonData {
     expert: data.expert,
   }
 
-  return { meta, content }
+  return { meta, content, usedFallback }
 }
 
 export function listLessons(module: string): string[] {
