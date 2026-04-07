@@ -54,7 +54,7 @@ export function listLessons(module: string): string[] {
   if (!fs.existsSync(dir)) return []
   return fs
     .readdirSync(dir)
-    .filter((f) => f.endsWith(".md"))
+    .filter((f) => f.endsWith(".md") && !f.endsWith(".en.md"))
     .map((f) => f.replace(/\.md$/, ""))
     .sort()
 }

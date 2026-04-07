@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import type { Messages } from "@/lib/i18n/messages"
+import type { ExpertAdvisorUiPlain } from "@/lib/i18n/messages"
 import type { ExpertConfig } from "@/lib/types"
 
 interface Message {
@@ -11,13 +11,13 @@ interface Message {
 
 interface Props {
   expert: ExpertConfig
-  ui: Messages["expertUi"]
+  ui: ExpertAdvisorUiPlain
 }
 
 export function ExpertAdvisor({ expert, ui }: Props) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: expert.intro ?? ui.welcomeFallback(expert.name) },
+    { role: "assistant", content: ui.welcomeMessage },
   ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -272,7 +272,7 @@ export function ExpertAdvisor({ expert, ui }: Props) {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={ui.askPlaceholder(expert.name)}
+                    placeholder={ui.inputPlaceholder}
                     rows={1}
                     className="flex-1 text-sm outline-none resize-none bg-transparent"
                     style={{ color: "var(--color-text-primary)", maxHeight: 120, lineHeight: 1.6 }}

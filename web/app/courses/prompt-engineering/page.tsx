@@ -5,7 +5,7 @@ import {
   getPromptChapterStyles,
   getPromptChapters,
 } from "@/lib/i18n/course-catalog"
-import { getLocale } from "@/lib/i18n/locale"
+import { getLocale } from "@/lib/i18n/locale-server"
 import { getMessages } from "@/lib/i18n/messages"
 
 export async function generateMetadata(): Promise<Metadata> {

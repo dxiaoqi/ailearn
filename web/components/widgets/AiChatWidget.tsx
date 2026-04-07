@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import type { MarkdownWidgetUi } from "@/lib/i18n/messages"
 import type { AiChatConfig } from "@/lib/types"
 
 type Role = "user" | "assistant"
@@ -9,9 +10,10 @@ interface Msg { role: Role; content: string }
 interface Props {
   config: AiChatConfig
   children?: React.ReactNode
+  ui: MarkdownWidgetUi["aiChat"]
 }
 
-export function AiChatWidget({ config, children }: Props) {
+export function AiChatWidget({ config, children, ui }: Props) {
   // `children` (directive mode) or `config.welcome` (JSON mode) seeds the first bubble
   const hasWelcome = !!(children || config.welcome)
   const [history, setHistory] = useState<Msg[]>(() =>
@@ -54,12 +56,12 @@ export function AiChatWidget({ config, children }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: apiMessages,
-          systemPrompt: config.systemPrompt ?? "你是一个专业的 AI 课程导师，用简洁中文回答，控制在 150 字内。",
+          systemPrompt: config.systemPrompt ?? ui.defaultSystemPrompt,
           ...(config.maxTokens ? { maxTokens: config.maxTokens } : {}),
         }),
       })
 
-      if (!res.ok || !res.body) throw new Error("请求失败")
+      if (!res.ok || !res.body) throw new Error(ui.requestFailed)
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
@@ -82,7 +84,7 @@ export function AiChatWidget({ config, children }: Props) {
         const next = [...prev]
         const last = next[next.length - 1]
         if (last?.role === "assistant" && last.content === "") {
-          next[next.length - 1] = { ...last, content: "暂时无法连接，请稍后重试。" }
+          next[next.length - 1] = { ...last, content: ui.connectionError }
         }
         return next
       })
@@ -113,10 +115,10 @@ export function AiChatWidget({ config, children }: Props) {
       >
         <span style={{ color: "var(--color-accent)", fontSize: 14, fontWeight: 600 }}>✦</span>
         <p className="text-sm" style={{ fontWeight: 500, color: "var(--color-text-primary)" }}>
-          {config.title ?? "AI 导师"}
+          {config.title ?? ui.defaultTitle}
         </p>
         <span className="text-xs ml-auto" style={{ color: "var(--color-text-tertiary)" }}>
-          {config.hint ?? "有疑问直接问"}
+          {config.hint ?? ui.defaultHint}
         </span>
       </div>
 
@@ -211,7 +213,7 @@ export function AiChatWidget({ config, children }: Props) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={config.placeholder ?? "输入你的问题…"}
+          placeholder={config.placeholder ?? ui.defaultPlaceholder}
           disabled={loading}
           className="flex-1 text-sm outline-none px-3 py-1.5 rounded-full"
           style={{

@@ -1,3 +1,4 @@
+import type { ExpertConfig } from "@/lib/types"
 import type { Locale } from "./locale"
 
 export const messages = {
@@ -93,6 +94,91 @@ export const messages = {
       askPlaceholder: (name: string) => `问 ${name} 任何关于本课的问题…`,
       sendAria: "发送",
       shortcutHint: "Enter 发送 · Shift+Enter 换行 · ⌘K 收起",
+    },
+    promptPractice: {
+      scenarioHeading: "选择你的工作场景（影响改写思路）",
+      rewrittenLabel: "你改写后的提示词",
+      hintStructureTitle: "参考结构",
+      submitFeedback: "提交查看反馈 ↗",
+      submitting: "AI 评估中…",
+      showHint: "查看提示",
+      hideHint: "收起提示",
+      feedbackTitle: "AI 反馈",
+      feedbackErrorTitle: "出错了",
+      feedbackFetchError: "获取反馈时出错，请稍后重试。",
+      requestFailed: "请求失败",
+      defaultSystemPrompt:
+        "你是一个 Prompt 工程专家，评估学生的 Prompt 改写质量，给出简洁实用的反馈，用中文回复。",
+      studentScenarioPrefix: "学生选择的场景：",
+      originalPromptPrefix: "原始提示词：",
+      rewrittenPromptPrefix: "学生改写后的提示词：\n",
+    },
+    widgets: {
+      beforeAfter: {
+        tabGood: "✓ 分析",
+        tabBad: "✗ 问题",
+        tabNeutral: "分析",
+        promptHeading: "提示词",
+      },
+      quiz: {
+        questionsUnit: " 题",
+        includesMulti: "含多选",
+        singleOnly: "单选",
+        correctSuffix: " 正确",
+        multiMark: "（多选）",
+        optionCorrect: "✓ 正确",
+        explainHeadingCorrect: "✓ 回答正确",
+        explainHeadingWrong: "解析",
+        confirmAnswers: "确认答案",
+        allCorrect: "全部答对！",
+      },
+      checklist: {
+        allDone: "🎉 本模块全部完成！",
+      },
+      sandbox: {
+        defaultTitle: "参数沙盒",
+        growthDefaultTitle: "增长曲线",
+        minutesSuffix: " 分钟",
+      },
+      aiChat: {
+        defaultSystemPrompt:
+          "你是一个专业的 AI 课程导师，用简洁中文回答，控制在 150 字内。",
+        requestFailed: "请求失败",
+        connectionError: "暂时无法连接，请稍后重试。",
+        defaultTitle: "AI 导师",
+        defaultHint: "有疑问直接问",
+        defaultPlaceholder: "输入你的问题…",
+      },
+      scenarioEval: {
+        defaultTitle: "AI 场景适配评估",
+        sceneLabel: "描述你的工作场景",
+        defaultPlaceholder: "例如：我每天需要……",
+        evaluating: "评估中…",
+        defaultButton: "✦ AI 评估适配度",
+        errorPrefix: "评估失败：",
+        retryHint: "请稍后重试",
+        suggestionHeading: "改造建议",
+        requestFailed: "请求失败",
+        apiSystemPrompt: "你是 AI 场景评估助手。只输出 JSON，不要有任何其他文字。",
+        noSystemSceneBlock: "你是 AI 课程导师。学员描述了以下工作场景：「{input}」\n\n",
+        withSystemSceneBlock: "\n\n学员描述的场景：「{input}」\n\n",
+        jsonOnlyLead: "请只输出 JSON，不要有任何其他内容：\n",
+        reasonFieldGuide: "30字内说明主要理由",
+        suggestionFieldGuide: "最重要的一条改造建议，30字内",
+        dimensionCommentGuide: "25字内",
+        defaultDimensions: ["重复性", "可分解性", "可验证性", "数据可获取性"],
+        verdictOptions: ["非常适合", "适合", "部分适合", "不适合"],
+      },
+      codePlayground: {
+        configMissing: "Code Playground: 未配置文件",
+        requestFailedHttp: "请求失败 (HTTP {status})",
+        serverErrorHttp: "服务端错误 (HTTP {status})",
+        emptyResponse: "服务端返回为空",
+        runCancelled: "\n[已取消执行]",
+        networkErrorPrefix: "网络错误: ",
+        noFileSelected: "未选择文件",
+        runPlaceholder: "点击 Run 执行代码...",
+      },
     },
   },
   en: {
@@ -191,6 +277,98 @@ export const messages = {
       sendAria: "Send",
       shortcutHint: "Enter to send · Shift+Enter newline · ⌘K toggle",
     },
+    promptPractice: {
+      scenarioHeading: "Pick a work scenario (shapes how you rewrite)",
+      rewrittenLabel: "Your rewritten prompt",
+      hintStructureTitle: "Reference structure",
+      submitFeedback: "Submit for feedback ↗",
+      submitting: "Evaluating…",
+      showHint: "Show hint",
+      hideHint: "Hide hint",
+      feedbackTitle: "AI feedback",
+      feedbackErrorTitle: "Something went wrong",
+      feedbackFetchError: "Couldn’t load feedback. Please try again.",
+      requestFailed: "Request failed",
+      defaultSystemPrompt:
+        "You are a prompt engineering expert. Evaluate the student’s prompt rewrite with concise, practical feedback. Reply in English.",
+      studentScenarioPrefix: "Scenario chosen by the student: ",
+      originalPromptPrefix: "Original prompt:\n",
+      rewrittenPromptPrefix: "Student’s rewritten prompt:\n",
+    },
+    widgets: {
+      beforeAfter: {
+        tabGood: "✓ Takeaway",
+        tabBad: "✗ Issue",
+        tabNeutral: "Analysis",
+        promptHeading: "Prompt",
+      },
+      quiz: {
+        questionsUnit: " questions",
+        includesMulti: "Includes multi-select",
+        singleOnly: "Single choice",
+        correctSuffix: " correct",
+        multiMark: "(multi-select)",
+        optionCorrect: "✓ Correct",
+        explainHeadingCorrect: "✓ Correct",
+        explainHeadingWrong: "Explanation",
+        confirmAnswers: "Check answer",
+        allCorrect: "Perfect score!",
+      },
+      checklist: {
+        allDone: "🎉 You’ve checked every item!",
+      },
+      sandbox: {
+        defaultTitle: "Parameter sandbox",
+        growthDefaultTitle: "Growth curve",
+        minutesSuffix: " min",
+      },
+      aiChat: {
+        defaultSystemPrompt:
+          "You are a professional AI course tutor. Answer clearly in English, about 150 words max.",
+        requestFailed: "Request failed",
+        connectionError: "Can’t connect right now. Please try again.",
+        defaultTitle: "AI tutor",
+        defaultHint: "Ask anything",
+        defaultPlaceholder: "Type your question…",
+      },
+      scenarioEval: {
+        defaultTitle: "AI scenario fit check",
+        sceneLabel: "Describe your work scenario",
+        defaultPlaceholder: "e.g. Every day I need to…",
+        evaluating: "Evaluating…",
+        defaultButton: "✦ Assess fit",
+        errorPrefix: "Assessment failed: ",
+        retryHint: "Please try again later",
+        suggestionHeading: "Suggested improvement",
+        requestFailed: "Request failed",
+        apiSystemPrompt:
+          "You are an AI scenario evaluator. Output JSON only—no other text.",
+        noSystemSceneBlock:
+          'You are an AI course tutor. The learner described this work scenario: "{input}"\n\n',
+        withSystemSceneBlock: '\n\nLearner scenario: "{input}"\n\n',
+        jsonOnlyLead: "Output JSON only, with no other content:\n",
+        reasonFieldGuide: "Main reason in ~30 characters",
+        suggestionFieldGuide: "One top improvement, ~30 characters",
+        dimensionCommentGuide: "~25 characters",
+        defaultDimensions: [
+          "Repeatability",
+          "Decomposability",
+          "Verifiability",
+          "Data availability",
+        ],
+        verdictOptions: ["Excellent fit", "Good fit", "Partial fit", "Not a fit"],
+      },
+      codePlayground: {
+        configMissing: "Code Playground: no files configured",
+        requestFailedHttp: "Request failed (HTTP {status})",
+        serverErrorHttp: "Server error (HTTP {status})",
+        emptyResponse: "Empty response from server",
+        runCancelled: "\n[Run cancelled]",
+        networkErrorPrefix: "Network error: ",
+        noFileSelected: "No file selected",
+        runPlaceholder: "Click Run to execute…",
+      },
+    },
   },
 } as const
 
@@ -198,4 +376,62 @@ export type Messages = (typeof messages)[Locale]
 
 export function getMessages(locale: Locale): Messages {
   return messages[locale]
+}
+
+/** Serializable strings only — safe to pass from Server Components into Client Components. */
+export type ExpertAdvisorUiPlain = {
+  errorRequest: string
+  chatErrorRetry: string
+  welcomeMessage: string
+  floatingTitle: string
+  collapse: string
+  badge: string
+  closeDialog: string
+  inputPlaceholder: string
+  sendAria: string
+  shortcutHint: string
+}
+
+export function expertUiPlain(
+  m: Messages,
+  expert: Pick<ExpertConfig, "name" | "intro">
+): ExpertAdvisorUiPlain {
+  return {
+    errorRequest: m.expertUi.errorRequest,
+    chatErrorRetry: m.expertUi.chatErrorRetry,
+    welcomeMessage: expert.intro ?? m.expertUi.welcomeFallback(expert.name),
+    floatingTitle: m.expertUi.floatingTitle,
+    collapse: m.expertUi.collapse,
+    badge: m.expertUi.badge,
+    closeDialog: m.expertUi.closeDialog,
+    inputPlaceholder: m.expertUi.askPlaceholder(expert.name),
+    sendAria: m.expertUi.sendAria,
+    shortcutHint: m.expertUi.shortcutHint,
+  }
+}
+
+export type PromptPracticeUiPlain = Messages["promptPractice"]
+
+export type MarkdownWidgetUi = {
+  promptPractice: PromptPracticeUiPlain
+  beforeAfter: Messages["widgets"]["beforeAfter"]
+  quiz: Messages["widgets"]["quiz"]
+  checklist: Messages["widgets"]["checklist"]
+  sandbox: Messages["widgets"]["sandbox"]
+  aiChat: Messages["widgets"]["aiChat"]
+  scenarioEval: Messages["widgets"]["scenarioEval"]
+  codePlayground: Messages["widgets"]["codePlayground"]
+}
+
+export function markdownWidgetUiPlain(m: Messages): MarkdownWidgetUi {
+  return {
+    promptPractice: m.promptPractice,
+    beforeAfter: m.widgets.beforeAfter,
+    quiz: m.widgets.quiz,
+    checklist: m.widgets.checklist,
+    sandbox: m.widgets.sandbox,
+    aiChat: m.widgets.aiChat,
+    scenarioEval: m.widgets.scenarioEval,
+    codePlayground: m.widgets.codePlayground,
+  }
 }

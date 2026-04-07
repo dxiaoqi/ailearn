@@ -1,9 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import type { MarkdownWidgetUi } from "@/lib/i18n/messages"
 import type { ChecklistConfig } from "@/lib/types"
 
-export function ChecklistWidget({ config }: { config: ChecklistConfig }) {
+export function ChecklistWidget({
+  config,
+  ui,
+}: {
+  config: ChecklistConfig
+  ui: MarkdownWidgetUi["checklist"]
+}) {
   const [checked, setChecked] = useState<boolean[]>(() => new Array(config.items.length).fill(false))
 
   useEffect(() => {
@@ -118,7 +125,7 @@ export function ChecklistWidget({ config }: { config: ChecklistConfig }) {
               background: "rgba(39,80,10,0.06)",
             }}
           >
-            🎉 本模块全部完成！
+            {ui.allDone}
           </div>
         )}
       </div>

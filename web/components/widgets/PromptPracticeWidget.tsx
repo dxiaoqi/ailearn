@@ -1,11 +1,18 @@
 "use client"
 
 import { useState } from "react"
+import type { PromptPracticeUiPlain } from "@/lib/i18n/messages"
 import type { PromptPracticeConfig } from "@/lib/types"
 
 type FeedbackState = "idle" | "loading" | "done" | "error"
 
-export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig }) {
+export function PromptPracticeWidget({
+  config,
+  ui,
+}: {
+  config: PromptPracticeConfig
+  ui: PromptPracticeUiPlain
+}) {
   const [selectedScenario, setSelectedScenario] = useState<number | null>(null)
   const [userPrompt, setUserPrompt] = useState("")
   const [showHint, setShowHint] = useState(false)
@@ -19,10 +26,10 @@ export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig 
 
     const scenarioContext =
       selectedScenario !== null
-        ? `学生选择的场景：${config.scenarios[selectedScenario].label} — ${config.scenarios[selectedScenario].description}`
+        ? `${ui.studentScenarioPrefix}${config.scenarios[selectedScenario].label} — ${config.scenarios[selectedScenario].description}`
         : ""
 
-    const userMessage = `原始提示词：${config.original}\n\n${scenarioContext}\n\n学生改写后的提示词：\n${userPrompt}`
+    const userMessage = `${ui.originalPromptPrefix}${config.original}\n\n${scenarioContext}\n\n${ui.rewrittenPromptPrefix}${userPrompt}`
 
     try {
       const res = await fetch("/api/chat", {
@@ -30,13 +37,11 @@ export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [{ role: "user", content: userMessage }],
-          systemPrompt:
-            config.systemPrompt ||
-            "你是一个 Prompt 工程专家，评估学生的 Prompt 改写质量，给出简洁实用的反馈，用中文回复。",
+          systemPrompt: config.systemPrompt || ui.defaultSystemPrompt,
         }),
       })
 
-      if (!res.ok || !res.body) throw new Error("请求失败")
+      if (!res.ok || !res.body) throw new Error(ui.requestFailed)
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
@@ -50,7 +55,7 @@ export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig 
       }
     } catch {
       setFeedbackState("error")
-      setFeedback("获取反馈时出错，请稍后重试。")
+      setFeedback(ui.feedbackFetchError)
     }
   }
 
@@ -90,7 +95,7 @@ export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig 
 
         {/* Scenario selector */}
         <p className="text-xs mb-2.5" style={{ fontWeight: 500, color: "var(--color-text-secondary)" }}>
-          选择你的工作场景（影响改写思路）
+          {ui.scenarioHeading}
         </p>
         <div className="grid grid-cols-3 gap-2.5 mb-4">
           {config.scenarios.map((s, i) => (
@@ -123,7 +128,7 @@ export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig 
 
         {/* Textarea */}
         <p className="text-xs mb-2" style={{ fontWeight: 500, color: "var(--color-text-secondary)" }}>
-          你改写后的提示词
+          {ui.rewrittenLabel}
         </p>
         <textarea
           value={userPrompt}
@@ -166,7 +171,7 @@ export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig 
                 fontSize: "12px",
               }}
             >
-              💡 参考结构
+              💡 {ui.hintStructureTitle}
             </span>
             {config.hint}
           </div>
@@ -187,7 +192,7 @@ export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig 
               transition: "opacity var(--transition-fast)",
             }}
           >
-            {feedbackState === "loading" ? "AI 评估中…" : "提交查看反馈 ↗"}
+            {feedbackState === "loading" ? ui.submitting : ui.submitFeedback}
           </button>
           {config.hint && (
             <button
@@ -201,7 +206,7 @@ export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig 
                 transition: "background var(--transition-fast)",
               }}
             >
-              {showHint ? "收起提示" : "查看提示"}
+              {showHint ? ui.hideHint : ui.showHint}
             </button>
           )}
         </div>
@@ -236,7 +241,7 @@ export function PromptPracticeWidget({ config }: { config: PromptPracticeConfig 
                     : "var(--color-text-info)",
               }}
             >
-              {feedbackState === "error" ? "⚠ 出错了" : "✦ AI 反馈"}
+              {feedbackState === "error" ? `⚠ ${ui.feedbackErrorTitle}` : `✦ ${ui.feedbackTitle}`}
             </span>
             {feedback}
           </div>

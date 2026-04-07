@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useMemo } from "react"
+import type { MarkdownWidgetUi } from "@/lib/i18n/messages"
 import type { SandboxConfig, SandboxMetric } from "@/lib/types"
 
 // ── Safe expression evaluator ──────────────────────────────────────
@@ -16,7 +17,7 @@ function evalExpr(expr: string, vars: Record<string, number>): number {
 }
 
 // ── Value formatter ────────────────────────────────────────────────
-function fmtVal(val: number, fmt?: string): string {
+function fmtVal(val: number, fmt?: string, minSuffix = " min"): string {
   if (!fmt || fmt === "auto") {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`
     if (val >= 10_000)    return `${(val / 1_000).toFixed(0)}k`
@@ -29,7 +30,7 @@ function fmtVal(val: number, fmt?: string): string {
   if (fmt === "$")    return `$${val.toFixed(3)}`
   if (fmt === "%")    return `${val.toFixed(1)}%`
   if (fmt === "s")    return `${val.toFixed(0)}s`
-  if (fmt === "min")  return `${(val / 60).toFixed(1)} 分钟`
+  if (fmt === "min") return `${(val / 60).toFixed(1)}${minSuffix}`
   return val.toFixed(+fmt || 0)
 }
 
@@ -40,7 +41,13 @@ function metricColor(val: number, m: SandboxMetric): string {
   return "var(--color-text-primary)"
 }
 
-export function SandboxWidget({ config }: { config: SandboxConfig }) {
+export function SandboxWidget({
+  config,
+  ui,
+}: {
+  config: SandboxConfig
+  ui: MarkdownWidgetUi["sandbox"]
+}) {
   // Build initial slider values from defaults
   const [sliders, setSliders] = useState<Record<string, number>>(() =>
     Object.fromEntries(config.params.map((p) => [p.id, p.default]))
@@ -68,6 +75,7 @@ export function SandboxWidget({ config }: { config: SandboxConfig }) {
   const growthRows = useMemo(() => {
     if (!config.growth) return null
     const { steps, labelExpr, valueExpr, maxExpr } = config.growth
+    const minSfx = ui.minutesSuffix
     const stepCount = Math.min(Math.round(evalExpr(steps, vars)), 12)
     const maxVal = evalExpr(maxExpr, vars)
     return Array.from({ length: stepCount }, (_, i) => {
@@ -75,9 +83,13 @@ export function SandboxWidget({ config }: { config: SandboxConfig }) {
       const val = evalExpr(valueExpr, stepVars)
       const pct = maxVal > 0 ? Math.min((val / maxVal) * 100, 100) : 0
       const label = evalExpr(labelExpr, stepVars)
-      return { label: String(Math.round(label)), val: fmtVal(val, config.growth!.fmt), pct }
+      return {
+        label: String(Math.round(label)),
+        val: fmtVal(val, config.growth!.fmt, minSfx),
+        pct,
+      }
     })
-  }, [config.growth, vars])
+  }, [config.growth, vars, ui.minutesSuffix])
 
   return (
     <div
@@ -94,7 +106,7 @@ export function SandboxWidget({ config }: { config: SandboxConfig }) {
       >
         <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>⊟</span>
         <p className="text-sm" style={{ fontWeight: 500, color: "var(--color-text-primary)" }}>
-          {config.title ?? "参数沙盒"}
+          {config.title ?? ui.defaultTitle}
         </p>
         {config.hint && (
           <p className="text-xs ml-auto" style={{ color: "var(--color-text-tertiary)" }}>{config.hint}</p>
@@ -122,7 +134,7 @@ export function SandboxWidget({ config }: { config: SandboxConfig }) {
                     className="text-sm"
                     style={{ fontFamily: "var(--font-mono)", fontWeight: 600, color: "var(--color-text-primary)" }}
                   >
-                    {fmtVal(sliders[p.id], p.fmt)}
+                    {fmtVal(sliders[p.id], p.fmt, ui.minutesSuffix)}
                   </span>
                 </div>
                 <input
@@ -182,7 +194,7 @@ export function SandboxWidget({ config }: { config: SandboxConfig }) {
                       transition: "color var(--transition-fast)",
                     }}
                   >
-                    {fmtVal(m.computed, m.fmt)}
+                    {fmtVal(m.computed, m.fmt, ui.minutesSuffix)}
                   </span>
                   <span className="text-xs leading-snug" style={{ color: "var(--color-text-tertiary)" }}>
                     {m.label}
@@ -200,7 +212,7 @@ export function SandboxWidget({ config }: { config: SandboxConfig }) {
               className="text-xs mb-2"
               style={{ color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)" }}
             >
-              {config.growth!.title ?? "增长曲线"}
+              {config.growth!.title ?? ui.growthDefaultTitle}
             </p>
             {growthRows.map((r, i) => (
               <div key={i} className="flex items-center gap-2">

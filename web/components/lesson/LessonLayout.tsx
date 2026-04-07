@@ -1,6 +1,6 @@
 import Link from "next/link"
 import type { Locale } from "@/lib/i18n/locale"
-import type { Messages } from "@/lib/i18n/messages"
+import { expertUiPlain, type Messages } from "@/lib/i18n/messages"
 import type { LessonMeta, TocItem } from "@/lib/types"
 import { LocaleSwitcher } from "@/components/LocaleSwitcher"
 import { ExpertAdvisor } from "./ExpertAdvisor"
@@ -201,7 +201,9 @@ export function LessonLayout({
       </div>
 
       {/* Expert advisor (floating) */}
-      {meta.expert && <ExpertAdvisor expert={meta.expert} ui={m.expertUi} />}
+      {meta.expert && (
+        <ExpertAdvisor expert={meta.expert} ui={expertUiPlain(m, meta.expert)} />
+      )}
     </div>
   )
 }

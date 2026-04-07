@@ -1,16 +1,18 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkDirective from "remark-directive"
 import rehypeSlug from "rehype-slug"
 import { WidgetRenderer } from "@/components/widgets/WidgetRenderer"
+import type { MarkdownWidgetUi } from "@/lib/i18n/messages"
 import { remarkDirectiveWidgets } from "@/lib/remarkDirectiveWidgets"
 import type { Components } from "react-markdown"
 
 interface Props {
   content: string
+  widgetsUi: MarkdownWidgetUi
 }
 
 // Rehype plugin: stamps data-block="true" on every <code> that is a direct
@@ -50,7 +52,8 @@ const rehypePlugins = [rehypeSlug, rehypeMarkBlockCode]
 // :::name{} syntax is parsed into containerDirective AST nodes first.
 const remarkPlugins = [remarkGfm, remarkDirective, remarkDirectiveWidgets]
 
-const components: Components = {
+function createMarkdownComponents(widgetsUi: MarkdownWidgetUi): Components {
+  return {
   // ── Headings with anchor IDs ──────────────────────────────────
   // id is injected by rehype-slug (same github-slugger algorithm as toc.ts)
   h1: ({ id, children }) => (
@@ -100,7 +103,9 @@ const components: Components = {
       if (widgetMatch) {
         const widgetType = widgetMatch[1].trim()
         try {
-          return <WidgetRenderer type={widgetType} config={JSON.parse(rawText)} />
+          return (
+            <WidgetRenderer type={widgetType} config={JSON.parse(rawText)} widgetsUi={widgetsUi} />
+          )
         } catch (err) {
           return (
             <div
@@ -257,7 +262,11 @@ const components: Components = {
     if (widgetType && configStr) {
       try {
         const config = JSON.parse(configStr)
-        return <WidgetRenderer type={widgetType} config={config}>{children}</WidgetRenderer>
+        return (
+          <WidgetRenderer type={widgetType} config={config} widgetsUi={widgetsUi}>
+            {children}
+          </WidgetRenderer>
+        )
       } catch {
         return (
           <div
@@ -277,8 +286,9 @@ const components: Components = {
     return <div {...(props as React.HTMLAttributes<HTMLDivElement>)}>{children}</div>
   },
 }
+}
 
-export function MarkdownRenderer({ content }: Props) {
+export function MarkdownRenderer({ content, widgetsUi }: Props) {
   // Defer ReactMarkdown entirely to the client to avoid hydration mismatches.
   // react-markdown's component overrides (pre/code) are not applied consistently
   // during Next.js SSR pre-rendering of "use client" components, causing the
@@ -288,6 +298,11 @@ export function MarkdownRenderer({ content }: Props) {
   // after React mounts — imperceptible to users.
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
+
+  const components = useMemo(
+    () => createMarkdownComponents(widgetsUi),
+    [widgetsUi]
+  )
 
   return (
     <div className="prose">

@@ -1,9 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import type { MarkdownWidgetUi } from "@/lib/i18n/messages"
 import type { QuizConfig } from "@/lib/types"
 
-export function QuizWidget({ config }: { config: QuizConfig }) {
+export function QuizWidget({
+  config,
+  ui,
+}: {
+  config: QuizConfig
+  ui: MarkdownWidgetUi["quiz"]
+}) {
   const [answers, setAnswers] = useState<Record<string, Set<number>>>({})
   const [submitted, setSubmitted] = useState<Record<string, boolean>>({})
 
@@ -34,6 +41,7 @@ export function QuizWidget({ config }: { config: QuizConfig }) {
   }
 
   const totalQuestions = config.questions.length
+  const hasMulti = config.questions.some((q) => q.type === "multiple")
   const doneCount = Object.keys(submitted).length
   const correctCount = config.questions.filter(
     (q) => submitted[q.id] && getScore(q.id, q.options)
@@ -57,7 +65,8 @@ export function QuizWidget({ config }: { config: QuizConfig }) {
             {config.title}
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-            {totalQuestions} 题 · {config.questions.some((q) => q.type === "multiple") ? "含多选" : "单选"}
+            {totalQuestions}
+            {ui.questionsUnit} · {hasMulti ? ui.includesMulti : ui.singleOnly}
           </p>
         </div>
         {doneCount > 0 && (
@@ -69,7 +78,10 @@ export function QuizWidget({ config }: { config: QuizConfig }) {
               fontWeight: 500,
             }}
           >
-            <span>{correctCount} / {doneCount} 正确</span>
+            <span>
+              {correctCount} / {doneCount}
+              {ui.correctSuffix}
+            </span>
           </div>
         )}
       </div>
@@ -99,7 +111,7 @@ export function QuizWidget({ config }: { config: QuizConfig }) {
                 {q.text}
                 {q.type === "multiple" && (
                   <span className="text-xs ml-2" style={{ color: "var(--color-text-tertiary)", fontWeight: 400 }}>
-                    （多选）
+                    {ui.multiMark}
                   </span>
                 )}
               </p>
@@ -118,7 +130,14 @@ export function QuizWidget({ config }: { config: QuizConfig }) {
                       bg = "var(--color-background-success)"
                       border = "var(--color-border-success)"
                       textColor = "var(--color-text-success)"
-                      indicator = <span className="ml-auto text-xs font-medium" style={{ color: "var(--color-text-success)" }}>✓ 正确</span>
+                      indicator = (
+                        <span
+                          className="ml-auto text-xs font-medium"
+                          style={{ color: "var(--color-text-success)" }}
+                        >
+                          {ui.optionCorrect}
+                        </span>
+                      )
                     } else if (isSelected && !opt.correct) {
                       bg = "var(--color-background-danger)"
                       border = "var(--color-border-danger)"
@@ -193,7 +212,7 @@ export function QuizWidget({ config }: { config: QuizConfig }) {
                       color: isCorrect ? "var(--color-text-info)" : "var(--color-text-warning)",
                     }}
                   >
-                    {isCorrect ? "✓ 回答正确" : "解析"}
+                    {isCorrect ? ui.explainHeadingCorrect : ui.explainHeadingWrong}
                   </span>
                   {q.explanation}
                 </div>
@@ -213,7 +232,7 @@ export function QuizWidget({ config }: { config: QuizConfig }) {
                     fontFamily: "inherit",
                   }}
                 >
-                  确认答案
+                  {ui.confirmAnswers}
                 </button>
               )}
             </div>
@@ -232,7 +251,7 @@ export function QuizWidget({ config }: { config: QuizConfig }) {
             fontWeight: 500,
           }}
         >
-          全部答对！
+          {ui.allCorrect}
         </div>
       )}
     </div>

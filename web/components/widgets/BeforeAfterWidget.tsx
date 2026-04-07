@@ -1,16 +1,38 @@
 "use client"
 
 import { useState } from "react"
+import type { MarkdownWidgetUi } from "@/lib/i18n/messages"
 import type { BeforeAfterConfig } from "@/lib/types"
 
-export function BeforeAfterWidget({ config }: { config: BeforeAfterConfig }) {
+export function BeforeAfterWidget({
+  config,
+  ui,
+}: {
+  config: BeforeAfterConfig
+  ui: MarkdownWidgetUi["beforeAfter"]
+}) {
   const [activeIdx, setActiveIdx] = useState(0)
   const active = config.tabs[activeIdx]
 
   const typeStyles = {
-    good:    { color: "var(--color-text-success)",  bg: "var(--color-background-success)",  border: "var(--color-border-success)",  label: "✓ 分析" },
-    bad:     { color: "var(--color-text-danger)",   bg: "var(--color-background-danger)",   border: "var(--color-border-danger)",   label: "✗ 问题" },
-    neutral: { color: "var(--color-text-info)",     bg: "var(--color-background-info)",     border: "var(--color-border-info)",     label: "分析" },
+    good: {
+      color: "var(--color-text-success)",
+      bg: "var(--color-background-success)",
+      border: "var(--color-border-success)",
+      label: ui.tabGood,
+    },
+    bad: {
+      color: "var(--color-text-danger)",
+      bg: "var(--color-background-danger)",
+      border: "var(--color-border-danger)",
+      label: ui.tabBad,
+    },
+    neutral: {
+      color: "var(--color-text-info)",
+      bg: "var(--color-background-info)",
+      border: "var(--color-border-info)",
+      label: ui.tabNeutral,
+    },
   }[active.type ?? "neutral"]
 
   return (
@@ -65,7 +87,7 @@ export function BeforeAfterWidget({ config }: { config: BeforeAfterConfig }) {
       {/* Content */}
       <div className="px-5 py-4">
         <p className="text-xs mb-2" style={{ fontWeight: 500, color: "var(--color-text-tertiary)", letterSpacing: "0.02em" }}>
-          提示词
+          {ui.promptHeading}
         </p>
         <div
           className="rounded-lg p-3.5 whitespace-pre-wrap"

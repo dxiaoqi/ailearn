@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react"
+import type { MarkdownWidgetUi } from "@/lib/i18n/messages"
 import type { CodePlaygroundConfig, CodePlaygroundFile, CodePlaygroundSlot } from "@/lib/types"
 
 // ── JS syntax tokenizer ─────────────────────────────────────────────
@@ -296,7 +297,13 @@ await __entryFn(__entryExports, __require(${JSON.stringify(entryFile)}));
 // Main Widget
 // ═══════════════════════════════════════════════════════════════════
 
-export function CodePlaygroundWidget({ config }: { config: CodePlaygroundConfig }) {
+export function CodePlaygroundWidget({
+  config,
+  ui,
+}: {
+  config: CodePlaygroundConfig
+  ui: MarkdownWidgetUi["codePlayground"]
+}) {
   const files = config.files ?? []
 
   // Validate config
@@ -306,7 +313,7 @@ export function CodePlaygroundWidget({ config }: { config: CodePlaygroundConfig 
         className="my-6 rounded-xl px-5 py-4 text-sm"
         style={{ background: "var(--color-background-warning)", border: "0.5px solid var(--color-border-warning)", color: "var(--color-text-warning)" }}
       >
-        Code Playground: 未配置文件
+        {ui.configMissing}
       </div>
     )
   }
@@ -409,9 +416,11 @@ export function CodePlaygroundWidget({ config }: { config: CodePlaygroundConfig 
         let msg: string
         try {
           const json = await res.json()
-          msg = json.error ?? `请求失败 (HTTP ${res.status})`
+          msg =
+            json.error ??
+            ui.requestFailedHttp.replace("{status}", String(res.status))
         } catch {
-          msg = `服务端错误 (HTTP ${res.status})`
+          msg = ui.serverErrorHttp.replace("{status}", String(res.status))
         }
         setError(msg)
         setIsRunning(false)
@@ -419,7 +428,7 @@ export function CodePlaygroundWidget({ config }: { config: CodePlaygroundConfig 
       }
 
       if (!res.body) {
-        setError("服务端返回为空")
+        setError(ui.emptyResponse)
         setIsRunning(false)
         return
       }
@@ -435,15 +444,15 @@ export function CodePlaygroundWidget({ config }: { config: CodePlaygroundConfig 
       }
     } catch (err) {
       if ((err as Error).name === "AbortError") {
-        setOutput((prev) => prev + "\n[已取消执行]")
+        setOutput((prev) => prev + ui.runCancelled)
       } else {
-        setError(`网络错误: ${err instanceof Error ? err.message : String(err)}`)
+        setError(`${ui.networkErrorPrefix}${err instanceof Error ? err.message : String(err)}`)
       }
     } finally {
       setIsRunning(false)
       abortRef.current = null
     }
-  }, [isRunning, files, slotValues, config.systemPrompt])
+  }, [isRunning, files, slotValues, config.systemPrompt, config.mode, ui])
 
   // Auto-run on mount
   useEffect(() => {
@@ -589,7 +598,7 @@ export function CodePlaygroundWidget({ config }: { config: CodePlaygroundConfig 
               className="flex-1 flex items-center justify-center text-xs"
               style={{ color: "var(--color-text-tertiary)" }}
             >
-              未选择文件
+              {ui.noFileSelected}
             </div>
           )}
         </div>
@@ -682,7 +691,7 @@ export function CodePlaygroundWidget({ config }: { config: CodePlaygroundConfig 
             </span>
           ) : (
             <span style={{ color: "var(--color-text-tertiary)", fontStyle: "italic" }}>
-              点击 Run 执行代码...
+              {ui.runPlaceholder}
             </span>
           )}
         </div>

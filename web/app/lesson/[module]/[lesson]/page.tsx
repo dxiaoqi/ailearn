@@ -1,13 +1,28 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { LessonLayout } from "@/components/lesson/LessonLayout"
 import { MarkdownRenderer } from "@/components/lesson/MarkdownRenderer"
 import { getLessonData } from "@/lib/content"
-import { getLocale } from "@/lib/i18n/locale"
-import { getMessages } from "@/lib/i18n/messages"
+import { getLocale } from "@/lib/i18n/locale-server"
+import { getMessages, markdownWidgetUiPlain } from "@/lib/i18n/messages"
 import { extractToc } from "@/lib/toc"
 
 interface Props {
   params: Promise<{ module: string; lesson: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { module, lesson } = await params
+  const locale = await getLocale()
+  try {
+    const { meta } = getLessonData(module, lesson, locale)
+    return {
+      title: meta.title,
+      description: meta.description ?? undefined,
+    }
+  } catch {
+    return {}
+  }
 }
 
 export default async function LessonPage({ params }: Props) {
@@ -33,7 +48,7 @@ export default async function LessonPage({ params }: Props) {
       messages={messages}
       usedFallback={usedFallback}
     >
-      <MarkdownRenderer content={content} />
+      <MarkdownRenderer content={content} widgetsUi={markdownWidgetUiPlain(messages)} />
     </LessonLayout>
   )
 }

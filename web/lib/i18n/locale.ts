@@ -1,4 +1,4 @@
-import { cookies } from "next/headers"
+/** Shared locale types & cookie name — safe to import from Client Components. */
 
 export const LOCALE_COOKIE = "class-note-locale"
 
@@ -9,9 +9,4 @@ export const locales: Locale[] = ["zh", "en"]
 export function parseLocale(value: string | undefined | null): Locale {
   if (value === "en") return "en"
   return "zh"
-}
-
-export async function getLocale(): Promise<Locale> {
-  const jar = await cookies()
-  return parseLocale(jar.get(LOCALE_COOKIE)?.value)
 }

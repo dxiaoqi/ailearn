@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import type { MarkdownWidgetUi } from "@/lib/i18n/messages"
 import type { ScenarioEvalConfig } from "@/lib/types"
 
 interface EvalDim  { name: string; score: number; comment: string }
@@ -12,11 +13,16 @@ interface EvalResult {
   suggestion?: string
 }
 
-const VERDICT_COLORS: Record<string, { fg: string; bg: string }> = {
-  "非常适合": { fg: "var(--color-text-success)", bg: "var(--color-background-success)" },
-  "适合":     { fg: "var(--color-text-success)", bg: "var(--color-background-success)" },
-  "部分适合": { fg: "var(--color-text-warning)", bg: "var(--color-background-warning)" },
-  "不适合":   { fg: "var(--color-text-danger)",  bg: "var(--color-background-danger)" },
+function verdictBadge(verdict: string, ui: MarkdownWidgetUi["scenarioEval"]) {
+  const opts: readonly string[] = ui.verdictOptions
+  const i = opts.indexOf(verdict)
+  if (i === 0 || i === 1) {
+    return { fg: "var(--color-text-success)", bg: "var(--color-background-success)" }
+  }
+  if (i === 2) {
+    return { fg: "var(--color-text-warning)", bg: "var(--color-background-warning)" }
+  }
+  return { fg: "var(--color-text-danger)", bg: "var(--color-background-danger)" }
 }
 
 function scoreColor(score: number) {
@@ -30,36 +36,43 @@ function scoreBg(score: number) {
   return "var(--color-background-danger)"
 }
 
-function buildPrompt(input: string, config: ScenarioEvalConfig): string {
-  const dims = (config.dimensions ?? ["重复性", "可分解性", "可验证性", "数据可获取性"])
-    .map((d) => `{"name": "${d}", "score": 0-100, "comment": "25字内"}`)
-    .join(",\n    ")
+function buildPrompt(
+  input: string,
+  config: ScenarioEvalConfig,
+  ui: MarkdownWidgetUi["scenarioEval"]
+): string {
+  const dimensions = config.dimensions ?? [...ui.defaultDimensions]
+  const dims = dimensions
+    .map(
+      (d) =>
+        `    {"name": ${JSON.stringify(d)}, "score": 0-100, "comment": ${JSON.stringify(ui.dimensionCommentGuide)}}`
+    )
+    .join(",\n")
 
   const base = config.systemPrompt
-    ? `${config.systemPrompt}\n\n学员描述的场景：「${input}」\n\n`
-    : `你是 AI 课程导师。学员描述了以下工作场景：「${input}」\n\n`
+    ? `${config.systemPrompt}${ui.withSystemSceneBlock.replace("{input}", input)}`
+    : ui.noSystemSceneBlock.replace("{input}", input)
 
-  return (
-    base +
-    `请只输出 JSON，不要有任何其他内容：
-{
-  "verdict": "非常适合" | "适合" | "部分适合" | "不适合",
+  const verdictUnion = ui.verdictOptions.map((v) => JSON.stringify(v)).join(" | ")
+
+  return `${base}${ui.jsonOnlyLead}{
+  "verdict": ${verdictUnion},
   "score": 0-100,
-  "reason": "30字内说明主要理由",
+  "reason": ${JSON.stringify(ui.reasonFieldGuide)},
   "dimensions": [
-    ${dims}
+${dims}
   ],
-  "suggestion": "最重要的一条改造建议，30字内"
+  "suggestion": ${JSON.stringify(ui.suggestionFieldGuide)}
 }`
-  )
 }
 
 interface Props {
   config: ScenarioEvalConfig
   children?: React.ReactNode
+  ui: MarkdownWidgetUi["scenarioEval"]
 }
 
-export function ScenarioEvalWidget({ config, children }: Props) {
+export function ScenarioEvalWidget({ config, children, ui }: Props) {
   const [input, setInput]   = useState("")
   const [result, setResult] = useState<EvalResult | null>(null)
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle")
@@ -72,7 +85,7 @@ export function ScenarioEvalWidget({ config, children }: Props) {
     setResult(null)
     setErrMsg("")
 
-    const prompt = buildPrompt(text, config)
+    const prompt = buildPrompt(text, config, ui)
 
     try {
       const res = await fetch("/api/chat", {
@@ -80,11 +93,11 @@ export function ScenarioEvalWidget({ config, children }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [{ role: "user", content: prompt }],
-          systemPrompt: "你是 AI 场景评估助手。只输出 JSON，不要有任何其他文字。",
+          systemPrompt: ui.apiSystemPrompt,
         }),
       })
 
-      if (!res.ok || !res.body) throw new Error("请求失败")
+      if (!res.ok || !res.body) throw new Error(ui.requestFailed)
 
       const reader  = res.body.getReader()
       const decoder = new TextDecoder()
@@ -107,7 +120,7 @@ export function ScenarioEvalWidget({ config, children }: Props) {
     }
   }
 
-  const vc = result ? VERDICT_COLORS[result.verdict] ?? { fg: "var(--color-text-primary)", bg: "var(--color-background-secondary)" } : null
+  const vc = result ? verdictBadge(result.verdict, ui) : null
   const circumference = 2 * Math.PI * 20
 
   return (
@@ -125,7 +138,7 @@ export function ScenarioEvalWidget({ config, children }: Props) {
       >
         <span style={{ color: "var(--color-accent)", fontSize: 14, fontWeight: 600 }}>✦</span>
         <p className="text-sm" style={{ fontWeight: 500, color: "var(--color-text-primary)" }}>
-          {config.title ?? "AI 场景适配评估"}
+          {config.title ?? ui.defaultTitle}
         </p>
       </div>
 
@@ -144,12 +157,12 @@ export function ScenarioEvalWidget({ config, children }: Props) {
         {/* Textarea */}
         <div className="flex flex-col gap-2">
           <label className="text-xs" style={{ fontWeight: 500, color: "var(--color-text-secondary)" }}>
-            描述你的工作场景
+            {ui.sceneLabel}
           </label>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={config.placeholder ?? "例如：我每天需要……"}
+            placeholder={config.placeholder ?? ui.defaultPlaceholder}
             rows={3}
             className="w-full rounded-xl resize-none outline-none px-4 py-3 text-sm"
             style={{
@@ -180,7 +193,7 @@ export function ScenarioEvalWidget({ config, children }: Props) {
             transition: "all var(--transition-fast)",
           }}
         >
-          {status === "loading" ? "评估中…" : (config.buttonLabel ?? "✦ AI 评估适配度")}
+          {status === "loading" ? ui.evaluating : (config.buttonLabel ?? ui.defaultButton)}
         </button>
 
         {/* Error */}
@@ -193,7 +206,8 @@ export function ScenarioEvalWidget({ config, children }: Props) {
               color: "var(--color-text-danger)",
             }}
           >
-            评估失败：{errMsg || "请稍后重试"}
+            {ui.errorPrefix}
+            {errMsg || ui.retryHint}
           </div>
         )}
 
@@ -282,7 +296,7 @@ export function ScenarioEvalWidget({ config, children }: Props) {
                 }}
               >
                 <span className="block text-xs font-semibold mb-1" style={{ color: "var(--color-text-info)" }}>
-                  改造建议
+                  {ui.suggestionHeading}
                 </span>
                 {result.suggestion}
               </div>
