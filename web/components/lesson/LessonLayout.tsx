@@ -9,6 +9,7 @@ import { TableOfContents } from "./TableOfContents"
 const moduleToCourse: Record<string, string> = {
   "module-1": "/courses/prompt-engineering",
   "module-2": "/courses/agent-engineering",
+  "module-3": "/courses/finance-macro-agent",
 }
 
 interface Props {

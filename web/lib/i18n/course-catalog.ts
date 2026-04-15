@@ -29,6 +29,12 @@ const accentAgent: Accent = {
   accentBorder: "var(--color-border-info)",
 }
 
+const accentFinance: Accent = {
+  accentColor: "var(--color-text-warning)",
+  accentBg: "var(--color-background-warning)",
+  accentBorder: "var(--color-border-warning)",
+}
+
 export function getHomeCourses(locale: Locale): HomeCourse[] {
   if (locale === "en") {
     return [
@@ -64,6 +70,23 @@ export function getHomeCourses(locale: Locale): HomeCourse[] {
           { value: "~3.5h", label: "Duration" },
         ],
         firstLesson: "/lesson/module-2/01-agent-loop",
+        available: true,
+      },
+      {
+        ...accentFinance,
+        slug: "finance-macro-agent",
+        title: "Macro analysis agent in practice",
+        subtitle: "From flowcharts to a refreshable AP News web app",
+        description:
+          "A five-lesson finance sprint: node types and prompts, context design, Trae vibe coding for fetch + Claude, then a small Flask UI—bilingual lessons with the same artifacts as the live cohort.",
+        tags: ["Finance", "5 lessons", "Trae + Claude"],
+        stats: [
+          { value: "5", label: "Lessons" },
+          { value: "15+", label: "In-class blocks" },
+          { value: "6", label: "Deliverables" },
+          { value: "~8h", label: "Duration" },
+        ],
+        firstLesson: "/lesson/module-3/01-agent-intro",
         available: true,
       },
     ]
@@ -102,6 +125,23 @@ export function getHomeCourses(locale: Locale): HomeCourse[] {
         { value: "~3.5h", label: "时长" },
       ],
       firstLesson: "/lesson/module-2/01-agent-loop",
+      available: true,
+    },
+    {
+      ...accentFinance,
+      slug: "finance-macro-agent",
+      title: "金融宏观分析 Agent 实战",
+      subtitle: "从流程图到可刷新的 AP News 网页产品",
+      description:
+        "五课金融向实战：节点与 Prompt、Context 与 Trae 目录、Vibe Coding 跑通抓取与 Claude摘要，最后用 Flask 做成可交互网页；中英文讲义与陪跑材料同源。",
+      tags: ["金融向", "5 课", "Trae + Claude"],
+      stats: [
+        { value: "5", label: "课程" },
+        { value: "15+", label: "课堂环节" },
+        { value: "6", label: "产物节点" },
+        { value: "~8h", label: "时长" },
+      ],
+      firstLesson: "/lesson/module-3/01-agent-intro",
       available: true,
     },
   ]
@@ -716,5 +756,207 @@ export function getPromptChapters(locale: Locale): PromptChapter[] {
     duration: locale === "en" ? ch.duration.en : ch.duration.zh,
     outcomes: locale === "en" ? ch.outcomes.en : ch.outcomes.zh,
     exercises: ch.exercises,
+  }))
+}
+
+export type FinanceMacroLayerZh = "实战"
+export type FinanceMacroLayerEn = "Lab"
+
+type FinanceMacroChapterDef = {
+  num: string
+  slug: string
+  duration: { zh: string; en: string }
+  layer: { zh: FinanceMacroLayerZh; en: FinanceMacroLayerEn }
+  title: { zh: string; en: string }
+  subtitle: { zh: string; en: string }
+  outcomes: { zh: string[]; en: string[] }
+  prereqs?: { zh: string; en: string }
+}
+
+const financeMacroChapters: FinanceMacroChapterDef[] = [
+  {
+    num: "01",
+    slug: "module-3/01-agent-intro",
+    title: {
+      zh: "Agent 是什么，能做什么",
+      en: "What is an agent, what can it do?",
+    },
+    subtitle: {
+      zh: "流程图 + News Agent 角色卡",
+      en: "Flowchart + News Agent role card",
+    },
+    layer: { zh: "实战", en: "Lab" },
+    duration: { zh: "约 100 分钟", en: "~100 min" },
+    outcomes: {
+      zh: [
+        "区分 Chat 与 Agent，以及三类节点",
+        "画出含失败分支的 AP News 整理流程图",
+        "完成五字段角色卡（含失败时）",
+      ],
+      en: [
+        "Contrast chat vs agents and three node types",
+        "Draw an AP News digest flow with a failure branch",
+        "Complete the five-field role card (incl. failure handling)",
+      ],
+    },
+  },
+  {
+    num: "02",
+    slug: "module-3/02-prompt-engine",
+    title: { zh: "Prompt Engine：写出有效指令", en: "Prompt engine: effective instructions" },
+    subtitle: {
+      zh: "四层结构 · JSON · 逻辑门",
+      en: "Four layers · JSON · logic gates",
+    },
+    layer: { zh: "实战", en: "Lab" },
+    duration: { zh: "约 100 分钟", en: "~100 min" },
+    outcomes: {
+      zh: [
+        "理解 Prompt 作为逻辑门",
+        "写出完整四层 News Agent Prompt",
+        "约定 JSON 输出与异常分支并完成互检",
+      ],
+      en: [
+        "See prompts as explicit logic gates",
+        "Author a full four-layer News Agent prompt",
+        "Lock JSON + edge cases and peer-review",
+      ],
+    },
+    prereqs: { zh: "课 1", en: "Lesson 1" },
+  },
+  {
+    num: "03",
+    slug: "module-3/03-context-engine",
+    title: {
+      zh: "Context Engine：喂对信息 + 项目目录",
+      en: "Context engine: inputs + repo scaffold",
+    },
+    subtitle: {
+      zh: "三原则 · Trae 骨架 · 依赖安装",
+      en: "Three rules · Trae scaffold · deps",
+    },
+    layer: { zh: "实战", en: "Lab" },
+    duration: { zh: "约 100 分钟", en: "~100 min" },
+    outcomes: {
+      zh: [
+        "应用 Context 三原则设计阅读材料包",
+        "完成 Context 设计文档",
+        "在 Trae 生成 news_agent 目录并 pip 安装成功",
+      ],
+      en: [
+        "Apply the three context rules to the reading pack",
+        "Finish the context worksheet",
+        "Scaffold news_agent in Trae and install requirements",
+      ],
+    },
+    prereqs: { zh: "课 2", en: "Lesson 2" },
+  },
+  {
+    num: "04",
+    slug: "module-3/04-vibe-coding-trae",
+    title: {
+      zh: "Vibe Coding：用 Trae 让系统动起来",
+      en: "Vibe coding: make the pipeline real",
+    },
+    subtitle: {
+      zh: "fetch_news · news_agent · 终端验收",
+      en: "fetch_news · news_agent · terminal QA",
+    },
+    layer: { zh: "实战", en: "Lab" },
+    duration: { zh: "约 100 分钟", en: "~100 min" },
+    outcomes: {
+      zh: [
+        "掌握四步工作法与 I/O 契约",
+        "跑通抓取 → Claude → summary.json",
+        "排查常见依赖与解析错误",
+      ],
+      en: [
+        "Use the four-step loop + I/O contracts",
+        "Ship fetch → Claude → summary.json",
+        "Debug common dependency/parse issues",
+      ],
+    },
+    prereqs: { zh: "课 3", en: "Lesson 3" },
+  },
+  {
+    num: "05",
+    slug: "module-3/05-web-product-json",
+    title: {
+      zh: "网页产品 + 回顾 + JSON 初识",
+      en: "Web UI + recap + JSON primer",
+    },
+    subtitle: {
+      zh: "Flask 产品化 · 五课演进 · 结构化铺垫",
+      en: "Flask wrap · five-lesson arc · structured I/O",
+    },
+    layer: { zh: "实战", en: "Lab" },
+    duration: { zh: "约 100 分钟", en: "~100 min" },
+    outcomes: {
+      zh: [
+        "用需求卡驱动 Trae 完成可刷新网页",
+        "口述从角色卡到网页的演进",
+        "理解 JSON 三规则并完成微练习",
+      ],
+      en: [
+        "Brief Trae into a refreshable web product",
+        "Narrate the arc from role card to UI",
+        "Learn three JSON rules + a micro drill",
+      ],
+    },
+    prereqs: { zh: "课 4", en: "Lesson 4" },
+  },
+]
+
+export type FinanceMacroChapter = {
+  num: string
+  slug: string
+  title: string
+  subtitle: string
+  layer: FinanceMacroLayerZh | FinanceMacroLayerEn
+  duration: string
+  outcomes: string[]
+  prereqs?: string
+}
+
+const financeMacroLayerStyleZh: Record<
+  FinanceMacroLayerZh,
+  { color: string; bg: string; border: string }
+> = {
+  实战: {
+    color: "var(--color-text-warning)",
+    bg: "var(--color-background-warning)",
+    border: "var(--color-border-warning)",
+  },
+}
+
+const financeMacroLayerStyleEn: Record<
+  FinanceMacroLayerEn,
+  { color: string; bg: string; border: string }
+> = {
+  Lab: {
+    color: "var(--color-text-warning)",
+    bg: "var(--color-background-warning)",
+    border: "var(--color-border-warning)",
+  },
+}
+
+export function getFinanceMacroChapterStyles(locale: Locale) {
+  return locale === "en" ? financeMacroLayerStyleEn : financeMacroLayerStyleZh
+}
+
+export function getFinanceMacroChapters(locale: Locale): FinanceMacroChapter[] {
+  return financeMacroChapters.map((ch) => ({
+    num: ch.num,
+    slug: ch.slug,
+    title: locale === "en" ? ch.title.en : ch.title.zh,
+    subtitle: locale === "en" ? ch.subtitle.en : ch.subtitle.zh,
+    layer: locale === "en" ? ch.layer.en : ch.layer.zh,
+    duration: locale === "en" ? ch.duration.en : ch.duration.zh,
+    outcomes: locale === "en" ? ch.outcomes.en : ch.outcomes.zh,
+    prereqs: ch.prereqs
+      ? locale === "en"
+        ? ch.prereqs.en
+        : ch.prereqs.zh
+      : undefined,
   }))
 }

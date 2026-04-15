@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第一期 · 第5节 · 网页产品 + JSON 初识</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+  :root{--ink:#1a1a2e;--ink-soft:#3d3d5c;--ink-muted:#7b7b9e;--paper:#faf9f6;--paper-warm:#f5f0e8;--paper-ruled:#ede8df;--accent:#c9472b;--accent-soft:#e8cfc8;--accent-pale:#faf0ee;--blue:#2563a8;--blue-soft:#cdddf5;--blue-pale:#f0f5fc;--green:#2d6a4f;--green-pale:#eef6f2;--amber:#92510a;--amber-pale:#fdf5e6;--border:#ddd8ce;--border-strong:#c8c0b0;--serif:'Noto Serif SC','Georgia',serif;--sans:'Noto Sans SC','PingFang SC',sans-serif;--mono:'JetBrains Mono','Courier New',monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px}
+  .nav{position:sticky;top:0;z-index:100;background:var(--ink);color:white;padding:0 2rem;display:flex;align-items:center;gap:1rem;height:52px;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+  .nav-title{font-size:13px;font-weight:500;opacity:.9}.nav-sep{opacity:.3}.nav-lesson{font-size:13px;opacity:.7}
+  .nav-tabs{margin-left:auto;display:flex;gap:4px}
+  .nav-tab{padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.6);font-family:var(--sans);transition:all .15s}
+  .nav-tab:hover{background:rgba(255,255,255,.1);color:white}.nav-tab.active{background:rgba(255,255,255,.18);color:white}
+  .main{max-width:820px;margin:0 auto;padding:2.5rem 2rem 5rem}
+  .view{display:none}.view.active{display:block}
+  .lesson-header{margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:2px solid var(--border)}
+  .lesson-meta{display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap}
+  .tag{font-size:11px;font-weight:500;padding:3px 10px;border-radius:4px}
+  .tag-period{background:var(--ink);color:white}.tag-lesson{background:var(--accent-soft);color:var(--accent)}.tag-time{background:var(--paper-warm);color:var(--ink-soft);border:1px solid var(--border)}
+  .lesson-title{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:.5rem}
+  .lesson-subtitle{font-size:14px;color:var(--ink-muted);font-style:italic}
+  .timeline{margin-bottom:2.5rem;background:var(--paper-warm);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .tl-hd{padding:12px 18px;background:var(--ink);color:white;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
+  .tl-row{display:grid;grid-template-columns:80px 1fr 2fr;border-bottom:1px solid var(--border)}
+  .tl-row:last-child{border-bottom:none}
+  .tl-time{padding:10px 14px;font-size:12px;font-family:var(--mono);color:var(--ink-muted);border-right:1px solid var(--border);display:flex;align-items:center;background:rgba(255,255,255,.4)}
+  .tl-mod{padding:10px 14px;font-size:13px;font-weight:500;border-right:1px solid var(--border);display:flex;align-items:center}
+  .tl-note{padding:10px 14px;font-size:12px;color:var(--ink-soft);display:flex;align-items:center}
+  .tl-row.hl .tl-mod{color:var(--accent)}.tl-row.hl{background:var(--accent-pale)}
+  .tl-row.gl .tl-mod{color:var(--green)}.tl-row.gl{background:var(--green-pale)}
+  .section{margin-bottom:2.5rem}
+  .sl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+  .sl::after{content:'';flex:1;height:1px;background:var(--border)}
+  .st{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--ink);margin-bottom:.75rem}
+  .script{background:white;border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:1.25rem 1.5rem;margin-bottom:1.25rem}
+  .sp{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+  .st2{font-size:14px;line-height:1.9;color:var(--ink)}
+  .st2 em{font-style:normal;background:var(--accent-soft);padding:1px 4px;border-radius:3px}
+  .script.blue{border-left-color:var(--blue)}.script.blue .sp{color:var(--blue)}.script.blue em{background:var(--blue-soft)}
+  .script.green{border-left-color:var(--green)}.script.green .sp{color:var(--green)}
+  .note{padding:1rem 1.25rem;border-radius:8px;margin-bottom:1rem;font-size:13px;line-height:1.7}
+  .note.tip{background:var(--blue-pale);border:1px solid var(--blue-soft);color:var(--blue)}
+  .note.warn{background:var(--amber-pale);border:1px solid #f5d78e;color:var(--amber)}
+  .note.info{background:var(--paper-warm);border:1px solid var(--border-strong);color:var(--ink-soft)}
+  .note.success{background:var(--green-pale);border:1px solid #a8d5be;color:var(--green)}
+  .nlabel{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;display:block}
+  .activity{background:var(--green-pale);border:1px solid #a8d5be;border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
+  .act-hd{background:var(--green);color:white;padding:10px 18px;display:flex;align-items:center;gap:10px;font-size:12px}
+  .act-badge{background:rgba(255,255,255,.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase}
+  .act-title{font-weight:500}.act-time{margin-left:auto;opacity:.8;font-size:11px}
+  .act-body{padding:1.25rem 1.5rem;font-size:13px;color:var(--ink-soft)}
+  .act-step{display:flex;gap:12px;margin-bottom:.75rem;align-items:flex-start}
+  .act-num{width:22px;height:22px;border-radius:50%;background:var(--green);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+  .act-text{color:var(--ink);line-height:1.6}
+  .kq{background:var(--ink);color:white;border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;font-family:var(--serif);font-size:16px;line-height:1.7}
+  .kq::before{content:'核心问题';display:block;font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.5;margin-bottom:.5rem}
+  .dl-box{background:white;border:2px solid var(--ink);border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
+  .dl-hd{background:var(--ink);color:white;padding:10px 18px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .dl-body{padding:1.25rem 1.5rem}
+  .dl-item{display:flex;gap:10px;margin-bottom:.75rem;font-size:13px;align-items:flex-start}
+  .dl-check{width:18px;height:18px;border:2px solid var(--border-strong);border-radius:4px;flex-shrink:0;margin-top:2px}
+  .tmpl{background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
+  .tmpl-hd{background:var(--paper-ruled);border-bottom:1px solid var(--border);padding:10px 18px;font-size:12px;font-weight:600;color:var(--ink-soft);letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+  .tmpl-tag{font-size:10px;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:3px;font-weight:700}
+  .tmpl-copy{font-size:10px;background:var(--blue-soft);color:var(--blue);padding:2px 8px;border-radius:3px;font-weight:700}
+  .tmpl-body{padding:1.25rem 1.5rem}
+  .field{margin-bottom:1.25rem}
+  .fl{font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .fh{font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px}
+  .fi{width:100%;min-height:64px;border:1px dashed var(--border-strong);border-radius:6px;padding:10px 12px;font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--paper-warm);resize:vertical;line-height:1.6}
+  .fi:focus{outline:2px solid var(--blue);outline-offset:1px;background:white}
+  .fi::placeholder{color:var(--ink-muted)}
+  code{font-family:var(--mono);font-size:12px;background:var(--paper-ruled);padding:2px 6px;border-radius:3px;color:var(--accent)}
+  pre{background:var(--ink);color:#e2e8f0;padding:1.25rem 1.5rem;border-radius:8px;font-family:var(--mono);font-size:12px;line-height:1.8;margin-bottom:1.25rem;overflow-x:auto;white-space:pre-wrap}
+  .arch-diagram{background:white;border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin-bottom:1.5rem;font-size:13px}
+  .arch-layer{display:flex;align-items:stretch;gap:12px;margin-bottom:8px}
+  .arch-label{min-width:80px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;flex-shrink:0}
+  .arch-box{flex:1;border-radius:8px;padding:10px 16px;font-size:12px;line-height:1.6}
+  .arch-box.front{background:var(--blue-pale);border:1px solid var(--blue-soft);color:var(--blue)}
+  .arch-box.back{background:var(--green-pale);border:1px solid #a8d5be;color:var(--green)}
+  .arch-box.tool{background:var(--paper-warm);border:1px solid var(--border);color:var(--ink-soft)}
+  .arch-arrow{display:flex;align-items:center;justify-content:center;color:var(--ink-muted);font-size:18px;margin-bottom:8px;padding-left:92px}
+  .req-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+  .req-card{background:var(--paper-warm);border:1px solid var(--border);border-radius:8px;padding:12px 16px}
+  .req-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-muted);margin-bottom:6px}
+  .req-text{font-size:13px;color:var(--ink);line-height:1.6}
+  .evolution{background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
+  .evo-hd{background:var(--ink);color:white;padding:10px 18px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .evo-body{padding:1.25rem 1.5rem}
+  .evo-row{display:flex;gap:12px;margin-bottom:.6rem;font-size:13px;align-items:center}
+  .evo-tag{min-width:50px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;text-align:center;flex-shrink:0}
+  .evo-arrow{color:var(--ink-muted);flex-shrink:0}
+  .evo-text{color:var(--ink-soft)}
+  .json-rule{border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:.75rem;background:white}
+  .json-rule-num{font-size:22px;font-weight:700;color:var(--blue-soft);float:right;margin-left:12px;line-height:1}
+  .json-rule-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px}
+  .json-rule-desc{font-size:12px;color:var(--ink-soft);line-height:1.6}
+  .json-bad{color:var(--accent);text-decoration:line-through;font-family:var(--mono);font-size:12px}
+  .json-good{color:var(--green);font-family:var(--mono);font-size:12px}
+  @media(max-width:600px){.req-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-title">第一期 · 宏观分析 Agent</span>
+  <span class="nav-sep">|</span>
+  <span class="nav-lesson">第5节 · 100分钟</span>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('teacher')">教师脚本</button>
+    <button class="nav-tab" onclick="showView('student')">学员材料</button>
+  </div>
+</nav>
+
+<div class="main">
+
+<!-- ═══ TEACHER VIEW ═══ -->
+<div class="view active" id="view-teacher">
+  <div class="lesson-header">
+    <div class="lesson-meta">
+      <span class="tag tag-period">第一期</span>
+      <span class="tag tag-lesson">第 5 节</span>
+      <span class="tag tag-time">100 分钟</span>
+    </div>
+    <h1 class="lesson-title">网页产品 + 第一期回顾 + JSON 初识</h1>
+    <p class="lesson-subtitle">前半：用 Trae 把系统做成可交互网页 · 后半：回顾演进路径 + JSON 为第二期铺垫</p>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-hd">课堂节奏</div>
+    <div class="tl-row"><div class="tl-time">0–5'</div><div class="tl-mod">回顾 + 目标</div><div class="tl-note">今天要从"终端"变成"网页产品"</div></div>
+    <div class="tl-row"><div class="tl-time">5–15'</div><div class="tl-mod">需求描述练习</div><div class="tl-note">学员写"我想要的产品需求卡"</div></div>
+    <div class="tl-row hl"><div class="tl-time">15–40'</div><div class="tl-mod">老师 Demo：需求→产品</div><div class="tl-note">真实演示向 Trae 描述需求，观察 Trae 选择方案</div></div>
+    <div class="tl-row hl"><div class="tl-time">40–70'</div><div class="tl-mod">学员自主完成</div><div class="tl-note">学员用自己的需求卡向 Trae 描述，老师只引导不给答案</div></div>
+    <div class="tl-row gl"><div class="tl-time">70–75'</div><div class="tl-mod">完整产品演示</div><div class="tl-note">每人在浏览器打开自己的产品</div></div>
+    <div class="tl-row"><div class="tl-time">75–—'</div><div class="tl-mod">[Vercel 部署]</div><div class="tl-note">老师自行补充</div></div>
+    <div class="tl-row"><div class="tl-time">—–88'</div><div class="tl-mod">第一期回顾</div><div class="tl-note">5节课产物演进，从设计图到上线产品</div></div>
+    <div class="tl-row"><div class="tl-time">88–96'</div><div class="tl-mod">JSON 初识</div><div class="tl-note">为什么自然语言不够，JSON 三个规则</div></div>
+    <div class="tl-row"><div class="tl-time">96–100'</div><div class="tl-mod">第二期预告</div><div class="tl-note">发放入学材料</div></div>
+  </div>
+
+  <!-- 回顾 -->
+  <div class="section">
+    <div class="sl">回顾 + 目标说明 · 0–5分钟</div>
+    <div class="script">
+      <div class="sp">老师开场</div>
+      <div class="st2">
+        上节课大家在终端看到了 AI 生成的新闻摘要——这是整个第一期的第一个真实成果。<br><br>
+        但现在的系统只有你自己能用：要打开终端、要手动运行命令、输出也只是文字。<br>
+        今天我们来做最后一步：<em>把它变成一个真正的网页产品，任何人都能用浏览器打开，还能点按钮触发刷新。</em><br><br>
+        最重要的是：今天我们继续用 Vibe Coding 的方式——<strong>你来描述你想要什么，Trae 来决定怎么实现。</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- 需求描述 -->
+  <div class="section">
+    <div class="sl">需求描述练习 · 5–15分钟</div>
+    <div class="script blue">
+      <div class="sp">为什么先写需求卡</div>
+      <div class="st2">
+        在打开 Trae 之前，我们先花10分钟写清楚"我想要什么"。<br>
+        这是 Vibe Coding 最重要的一步：<em>需求越清晰，AI 的输出越接近你想要的。</em><br><br>
+        每人发一张需求卡模板（见学员材料），独立填写5分钟，然后2人一组互相读一读，
+        检查对方的需求是否说得足够清楚。
+      </div>
+    </div>
+    <div class="note tip">
+      <span class="nlabel">老师在这10分钟关注</span>
+      学员的需求描述是否具体——"好看一点"不够，要说"深色背景、卡片布局、有标题和摘要"。
+      如果学员写得太模糊，引导他用"感觉像某个网站"来描述。
+    </div>
+  </div>
+
+  <!-- Demo -->
+  <div class="section">
+    <div class="sl">老师 Demo · 15–40分钟</div>
+    <div class="kq">现在的系统只能在终端里跑。<br>怎么告诉 Trae"我想要一个可以分享给朋友看的网页产品"？</div>
+
+    <div class="script">
+      <div class="sp">Demo 的核心教学目标</div>
+      <div class="st2">
+        这25分钟 Demo 最重要的不是最终代码，而是向学员展示：<br><br>
+        ① <em>如何把需求卡里的内容翻译成 Trae 能理解的描述</em><br>
+        ② <em>遇到 Trae 的输出不满意时，怎么用自然语言继续调整</em><br>
+        ③ <em>为什么按钮触发需要一个"后端"——纯 HTML 做不到这点</em>（让 Trae 解释，不是老师解释）
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:.75rem">第一步：告诉 Trae 整体需求（把这段话发给 Trae AI）：</p>
+    <pre>我已经有两个 Python 脚本：
+- fetch_news.py：运行后从 AP News 抓取金融新闻，保存到 data/summary.json 的 raw_news 字段
+- news_agent.py：运行后读取 raw_news，用 Claude AI 整理，结果保存到 items 字段
+
+items 的格式：[{"title":"...","summary":"...","market_impact":"...","url":"..."}]
+
+我想把这个系统做成一个网页产品，需求：
+
+【展示】
+用卡片展示 items 里的每条新闻，深色专业风格（参考金融资讯网站）
+每张卡片：标题 / 摘要 / 市场影响（标签样式）/ 查看原文链接
+
+【交互】
+一个"立即刷新"按钮，点击后：
+1. 触发 fetch_news.py 和 news_agent.py 的运行
+2. 按钮显示 loading 状态（不能点了没反应）
+3. 数据更新后自动刷新页面内容
+
+【自动】
+每天 08:00 自动运行一次
+
+你来决定用什么技术方案，我只关心最终效果。</pre>
+
+    <div class="script green">
+      <div class="sp">当 Trae 选择了 Flask，顺势解释</div>
+      <div class="st2">
+        Trae 通常会选择用 Flask 实现——这时候老师说：<br><br>
+        "看，Trae 选择了 Flask 来做后端。为什么需要后端？因为按钮点击要触发 Python 脚本运行，
+        纯 HTML 网页做不到这点——<em>网页不能直接运行你电脑里的程序，需要一个中间人来接收请求、调用脚本、返回结果。</em>
+        这个中间人就是 Flask。<br><br>
+        我们不需要自己懂 Flask——Trae 帮我们写了，我们只需要能运行它、能验证效果。"
+      </div>
+    </div>
+
+    <div class="script">
+      <div class="sp">遇到效果不满意时，示范如何继续调整</div>
+      <div class="st2">
+        现场演示2~3次"看效果 → 用自然语言反馈 → Trae 修改"的循环：<br><br>
+        <em>"卡片间距太小，文字挤在一起，能不能更宽松一点？"</em><br>
+        <em>"点了刷新按钮完全没反应，帮我 debug 一下"</em><br>
+        <em>"手机上打开，卡片横着排了，能不能变成一列？"</em><br><br>
+        这个循环就是 Vibe Coding 真实的工作方式。
+      </div>
+    </div>
+  </div>
+
+  <!-- 学员自主 -->
+  <div class="section">
+    <div class="sl">学员自主完成 · 40–70分钟</div>
+    <div class="activity">
+      <div class="act-hd">
+        <span class="act-badge">学员自主</span>
+        <span class="act-title">用自己的需求卡向 Trae 描述，做出自己的版本</span>
+        <span class="act-time">30 分钟</span>
+      </div>
+      <div class="act-body">
+        <div class="act-step"><div class="act-num">1</div><div class="act-text">用自己的需求卡内容告诉 Trae——不要直接复制老师的 Prompt，要有自己的想法</div></div>
+        <div class="act-step"><div class="act-num">2</div><div class="act-text">遇到问题，先用自然语言把现象告诉 Trae：比如"按钮点了但页面没变化，帮我 debug"</div></div>
+        <div class="act-step"><div class="act-num">3</div><div class="act-text">让 Trae 告诉你怎么运行（通常是 <code>python app.py</code>），然后用浏览器打开 <code>http://localhost:5000</code></div></div>
+        <div class="act-step"><div class="act-num">4</div><div class="act-text">验证：卡片显示 / 刷新按钮有 loading / 数据能更新</div></div>
+      </div>
+    </div>
+    <div class="note tip">
+      <span class="nlabel">老师在这30分钟的角色</span>
+      不主动给代码答案。学员遇到问题时，引导他们先问 Trae，观察 Trae 的解答。
+      只有在 Trae 无法解决的情况下才介入（通常是环境配置问题，而不是代码问题）。<br><br>
+      好的引导语："你怎么跟 Trae 描述这个问题？把你看到的现象说给它听。"
+    </div>
+    <div class="note warn">
+      <span class="nlabel">常见卡点及快速处理</span>
+      <strong>Flask 启动报错</strong>：让 Trae AI 看报错信息："启动 app.py 报了这个错（粘贴错误），帮我修"<br>
+      <strong>浏览器白屏</strong>："网页打开是白的，帮我检查 /api/news 接口能不能正常返回数据"<br>
+      <strong>按钮没有 loading 效果</strong>："点了刷新按钮，按钮没有任何变化，帮我检查 JavaScript 里的点击处理函数"
+    </div>
+  </div>
+
+  <!-- 产品演示 -->
+  <div class="section">
+    <div class="sl">产品演示 · 70–75分钟</div>
+    <div class="script green">
+      <div class="sp">全班展示</div>
+      <div class="st2">
+        请所有人都打开浏览器，进入 <em>http://localhost:5000</em>（或 Trae 告知的地址）。<br><br>
+        随机点几位学员，让他们把屏幕分享出来，展示自己的网页产品。
+        每人30秒：展示卡片样式 + 点一次刷新按钮。<br><br>
+        <em>如果学员做出了有个人特色的样式（颜色/布局不同），要特别表扬——这正是 Vibe Coding 的价值：每个人的产品都不一样。</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- [Vercel 部署 - 老师自行补充] -->
+  <div class="section">
+    <div class="sl">[Vercel 部署] — 老师自行补充</div>
+    <div class="note info">
+      <span class="nlabel">占位说明</span>
+      此节由老师根据实际情况自行设计和补充。完成后每人应有一个真实的公网网址。
+    </div>
+  </div>
+
+  <!-- 第一期回顾 -->
+  <div class="section">
+    <div class="sl">第一期回顾</div>
+    <div class="st">5节课的演进路径</div>
+    <div class="script blue">
+      <div class="sp">老师带着回顾</div>
+      <div class="st2">
+        我们来看一下这5节课做了什么：<br><br>
+        <strong>第1节</strong>：你们用自然语言描述了 Agent 是什么、画了系统流程图、写了角色卡。
+        那时候没有任何代码，就一张流程图和一张角色卡。<br><br>
+        <strong>第2节</strong>：把角色卡里的"输出"变成了有格式要求的 Prompt，
+        加上了逻辑门，第一次要求 JSON 格式输出。<br><br>
+        <strong>第3节</strong>：设计了 Context（给 AI 什么信息），在 Trae 里搭好了整个项目的骨架。<br><br>
+        <strong>第4节</strong>：用 Vibe Coding 把两个真实脚本造出来，第一次在终端看到 AI 生成的金融摘要。<br><br>
+        <strong>第5节</strong>：变成了一个可以分享给朋友看的真实网页产品。<br><br>
+        <em>从"一张角色卡"到"一个有真实网址的产品"——这就是这5节课干的事。</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- JSON 初识 -->
+  <div class="section">
+    <div class="sl">JSON 初识 · 88–96分钟</div>
+    <div class="kq">我们的系统能给自己看了。<br>但如果要让另一个 AI 来读这份摘要、给出"今天适合关注哪个板块"的建议，它能读懂吗？</div>
+
+    <div class="script">
+      <div class="sp">引入场景</div>
+      <div class="st2">
+        打开 data/summary.json，找到 items[0].market_impact 字段，读出一条：<br>
+        比如 <em>"受美联储政策不确定性影响，债券市场承压，利率敏感型股票面临调整压力"</em><br><br>
+        问学员：如果另一个程序要从这句话里提取"影响的资产类别"和"方向是涨还是跌"——<em>它能做到吗？</em><br><br>
+        答案：很难。自然语言对人友好，对程序不友好。"承压"是什么意思？涨还是跌？程序不知道。<br><br>
+        <strong>这就是我们第二期要解决的问题：让 Agent 的输出从"人话"变成"机器话"。</strong>
+      </div>
+    </div>
+
+    <div class="st">JSON 三个规则（快速讲，各2分钟）</div>
+    <div class="json-rule">
+      <div class="json-rule-num">1</div>
+      <div class="json-rule-title">每个值有名字</div>
+      <div class="json-rule-desc">不能只有值，必须说明这个值是什么</div>
+      <div class="json-bad">"down"</div> → <div class="json-good">{"direction": "down"}</div>
+    </div>
+    <div class="json-rule">
+      <div class="json-rule-num">2</div>
+      <div class="json-rule-title">值有类型</div>
+      <div class="json-rule-desc">数字就是数字，文字就是文字，不能混</div>
+      <div class="json-bad">{"change": "下跌1.2%"}</div> → <div class="json-good">{"change_pct": -1.2}</div>
+    </div>
+    <div class="json-rule">
+      <div class="json-rule-num">3</div>
+      <div class="json-rule-title">结构可以嵌套</div>
+      <div class="json-rule-desc">一条记录里可以包含多个子字段，方便分类查询</div>
+      <div class="json-good">{"impacts": [{"asset": "USD", "direction": "up"}, {"asset": "Gold", "direction": "down"}]}</div>
+    </div>
+
+    <div class="activity">
+      <div class="act-hd">
+        <span class="act-badge">课堂练习</span>
+        <span class="act-title">把一条 market_impact 翻译成 JSON</span>
+        <span class="act-time">3 分钟</span>
+      </div>
+      <div class="act-body">
+        <div class="act-step"><div class="act-num">1</div><div class="act-text">原文：<em>"受美联储加息预期影响，美元走强，黄金承压"</em></div></div>
+        <div class="act-step"><div class="act-num">2</div><div class="act-text">用上面三个规则，自己设计字段，翻译成 JSON 格式（用 Claude 对话界面辅助）</div></div>
+        <div class="act-step"><div class="act-num">3</div><div class="act-text">参考答案：<code>{"trigger": "美联储加息预期", "impacts": [{"asset": "USD", "direction": "up"}, {"asset": "Gold", "direction": "down"}]}</code></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第二期预告 -->
+  <div class="section">
+    <div class="sl">第二期预告 · 96–100分钟</div>
+    <div class="script green">
+      <div class="sp">第二期预告</div>
+      <div class="st2">
+        第一期结束，你们有了一个真实能用的 AI 新闻摘要产品。<br><br>
+        第二期要做什么？<br>
+        ① 增加一个 Analyst Agent，读取 News Agent 的输出，给出更深入的市场建议<br>
+        ② 两个 Agent 用 JSON 格式通信（这就是为什么今天要学 JSON）<br>
+        ③ 建立自动循环：定时运行 → 分析 → 自动更新网页<br><br>
+        <em>发放第二期入学材料（JSON 速查卡 + 第二期工具准备说明）。</em>
+      </div>
+    </div>
+    <div class="dl-box">
+      <div class="dl-hd">第一期完整产物确认</div>
+      <div class="dl-body">
+        <div class="dl-item"><div class="dl-check"></div><span>流程图（第1节）</span></div>
+        <div class="dl-item"><div class="dl-check"></div><span>News Agent 角色卡（第1节）</span></div>
+        <div class="dl-item"><div class="dl-check"></div><span>News Agent Prompt（第2节）</span></div>
+        <div class="dl-item"><div class="dl-check"></div><span>Context 设计文档（第3节）</span></div>
+        <div class="dl-item"><div class="dl-check"></div><span>fetch_news.py + news_agent.py（第4节）</span></div>
+        <div class="dl-item"><div class="dl-check"></div><span>网页产品（第5节）—— 能在浏览器打开，刷新按钮可用</span></div>
+        <div class="dl-item"><div class="dl-check"></div><span>JSON 翻译练习（第5节）</span></div>
+      </div>
+    </div>
+  </div>
+</div><!-- /teacher -->
+
+
+<!-- ═══ STUDENT VIEW ═══ -->
+<div class="view" id="view-student">
+  <div class="lesson-header">
+    <div class="lesson-meta">
+      <span class="tag tag-period">第一期</span>
+      <span class="tag tag-lesson">第 5 节</span>
+      <span class="tag tag-time">100 分钟</span>
+    </div>
+    <h1 class="lesson-title">网页产品 + 第一期回顾 + JSON 初识</h1>
+    <p class="lesson-subtitle">今天结束时：可交互网页产品 + 第一期完整产物包 + JSON 初步理解</p>
+  </div>
+
+  <div class="kq">现在的系统只有自己能用。<br>怎么告诉 Trae 我想要什么，让它帮我做成一个可以分享给朋友的产品？</div>
+
+  <!-- 需求卡 -->
+  <div class="section">
+    <div class="sl">练习① · 10分钟</div>
+    <div class="st">写出你的产品需求卡</div>
+    <div class="note tip">
+      <span class="nlabel">为什么先写需求卡</span>
+      需求越清晰，Trae 的输出越接近你想要的。"好看一点"不够，要说"深色背景、卡片布局、有标题和摘要"。
+    </div>
+    <div class="tmpl">
+      <div class="tmpl-hd"><span>产品需求卡</span><span class="tmpl-tag">学员填写</span></div>
+      <div class="tmpl-body">
+        <div class="field">
+          <div class="fl">1. 展示</div>
+          <div class="fh">页面显示什么内容？长什么样子？</div>
+          <textarea class="fi" placeholder="例：用卡片展示今日金融新闻摘要。每张卡片有标题、2~3句摘要、一句市场影响、查看原文链接。深色背景，看起来专业一点。"></textarea>
+        </div>
+        <div class="field">
+          <div class="fl">2. 交互</div>
+          <div class="fh">用户能做什么操作？点了之后有什么反馈？</div>
+          <textarea class="fi" placeholder="例：有一个「立即刷新」按钮，点了之后显示转圈圈（不能点完没反应），约30秒后页面自动更新显示新数据。"></textarea>
+        </div>
+        <div class="field">
+          <div class="fl">3. 自动</div>
+          <div class="fh">不需要手动操作时，系统自动做什么？</div>
+          <textarea class="fi" placeholder="例：每天早上8点自动抓取一次，不需要手动触发。"></textarea>
+        </div>
+        <div class="field">
+          <div class="fl">4. 感觉像</div>
+          <div class="fh">有没有哪个网站或产品的风格你觉得不错？</div>
+          <textarea class="fi" style="min-height:48px" placeholder="例：有点像 Bloomberg 首页的简化版，或者路透社的新闻列表页面。"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 告诉 Trae -->
+  <div class="section">
+    <div class="sl">练习② · 30分钟自主</div>
+    <div class="st">把需求卡内容告诉 Trae，做出你的网页产品</div>
+
+    <div class="note info">
+      <span class="nlabel">操作方式</span>
+      不要直接复制老师演示时的 Prompt。用你自己的需求卡内容，告诉 Trae 你想要什么。<br>
+      下面是一个基础框架，把你填好的需求卡内容填进去：
+    </div>
+
+    <div class="tmpl">
+      <div class="tmpl-hd"><span>基础框架（用你的需求内容替换括号部分）</span><span class="tmpl-copy">修改后发给 Trae</span></div>
+      <div class="tmpl-body">
+        <pre style="margin:0;border-radius:6px;font-size:11px">我已经有两个 Python 脚本：
+- fetch_news.py：从 AP News 抓取金融新闻到 data/summary.json 的 raw_news
+- news_agent.py：用 Claude AI 整理，结果保存到 items
+  items 格式：[{"title":"...","summary":"...","market_impact":"...","url":"..."}]
+
+我想把这个系统做成网页产品，需求：
+
+【展示】
+[填入你的展示需求]
+
+【交互】
+[填入你的交互需求，包括按钮的反馈效果]
+
+【自动】
+每天 08:00 自动运行
+
+你来决定用什么技术方案，帮我实现所有需要的文件。</pre>
+      </div>
+    </div>
+
+    <div class="tmpl">
+      <div class="tmpl-hd"><span>验证清单</span><span class="tmpl-tag">逐项检查</span></div>
+      <div class="tmpl-body">
+        <div class="field">
+          <div class="fl">产品能用</div>
+          <textarea class="fi" style="min-height:100px" placeholder="□ 运行 Trae 告知的启动命令（通常是 python app.py）
+□ 浏览器打开 http://localhost:5000，能看到新闻卡片
+□ 点击刷新按钮，有 loading 反馈（不是点完没动静）
+□ 约30秒后，数据自动更新"></textarea>
+        </div>
+        <div class="field">
+          <div class="fl">遇到问题时——告诉 Trae 的方式</div>
+          <textarea class="fi" placeholder="把你看到的现象告诉 Trae，不要猜代码问题：
+例："网页打开是白的，什么都没有，帮我检查是哪里的问题"
+例："按钮点了完全没有反应，连转圈都没有，帮我 debug""></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第一期回顾 -->
+  <div class="section">
+    <div class="sl">第一期演进回顾</div>
+    <div class="st">从设计图到上线产品</div>
+    <div class="evolution">
+      <div class="evo-hd">5节课的产物演进</div>
+      <div class="evo-body">
+        <div class="evo-row"><span class="evo-tag" style="background:var(--paper-ruled);color:var(--ink-muted)">第1节</span><span class="evo-arrow">→</span><span class="evo-text">流程图 + 自然语言角色卡（系统的蓝图）</span></div>
+        <div class="evo-row"><span class="evo-tag" style="background:var(--accent-soft);color:var(--accent)">第2节</span><span class="evo-arrow">→</span><span class="evo-text">四层结构 Prompt（AI 能执行的指令）</span></div>
+        <div class="evo-row"><span class="evo-tag" style="background:var(--blue-soft);color:var(--blue)">第3节</span><span class="evo-arrow">→</span><span class="evo-text">Context 设计 + Trae 项目目录（系统的骨架）</span></div>
+        <div class="evo-row"><span class="evo-tag" style="background:var(--green-pale);color:var(--green)">第4节</span><span class="evo-arrow">→</span><span class="evo-text">fetch_news.py + news_agent.py（系统第一次动起来）</span></div>
+        <div class="evo-row"><span class="evo-tag" style="background:var(--ink);color:white">第5节</span><span class="evo-arrow">→</span><span class="evo-text">可交互网页产品（可以发给任何人打开）</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JSON 初识 -->
+  <div class="section">
+    <div class="sl">JSON 初识 · 约8分钟</div>
+    <div class="st">为什么需要 JSON</div>
+    <div class="note info">
+      <span class="nlabel">场景</span>
+      现在 news_agent.py 的 market_impact 字段是自然语言。第二期要加一个 Analyst Agent 来读取它，
+      判断"影响的是哪个资产、方向是涨还是跌"。程序能从自然语言里提取这些信息吗？很难。
+      <strong>这就是 JSON 的价值：把信息变成程序能精确读取的格式。</strong>
+    </div>
+
+    <div class="json-rule">
+      <div class="json-rule-num">1</div>
+      <div class="json-rule-title">规则1：每个值有名字</div>
+      <div class="json-rule-desc">不能只有值，要说明这个值是什么</div>
+      <div style="margin-top:6px"><div class="json-bad">"down"</div></div>
+      <div><div class="json-good">{"direction": "down"}</div></div>
+    </div>
+    <div class="json-rule">
+      <div class="json-rule-num">2</div>
+      <div class="json-rule-title">规则2：值有类型</div>
+      <div class="json-rule-desc">数字不加引号，文字加引号，不能混</div>
+      <div style="margin-top:6px"><div class="json-bad">{"change": "下跌1.2%"}</div></div>
+      <div><div class="json-good">{"change_pct": -1.2}</div></div>
+    </div>
+    <div class="json-rule">
+      <div class="json-rule-num">3</div>
+      <div class="json-rule-title">规则3：结构可以嵌套</div>
+      <div class="json-rule-desc">一条记录里可以包含列表，列表里每项又是一个记录</div>
+      <div style="margin-top:6px"><div class="json-good">{"impacts": [{"asset": "USD", "direction": "up"}, {"asset": "Gold", "direction": "down"}]}</div></div>
+    </div>
+
+    <!-- JSON 翻译练习 -->
+    <div class="tmpl">
+      <div class="tmpl-hd"><span>JSON 翻译练习</span><span class="tmpl-tag">学员填写</span></div>
+      <div class="tmpl-body">
+        <div class="field">
+          <div class="fl">原文（自然语言）</div>
+          <div style="padding:10px 12px;background:var(--paper-warm);border-radius:6px;font-size:13px;color:var(--ink);border:1px solid var(--border);margin-bottom:10px">
+            "受美联储加息预期影响，美元走强，黄金承压"
+          </div>
+          <div class="fl" style="margin-top:12px">翻译成 JSON（用 Claude 辅助）</div>
+          <div class="fh">设计你自己的字段结构，把上面的信息结构化</div>
+          <textarea class="fi" style="min-height:100px;font-family:var(--mono);font-size:12px" placeholder='参考结构（你的字段可以不同）：
+{
+  "trigger": "美联储加息预期",
+  "impacts": [
+    {"asset": "USD", "direction": "up"},
+    {"asset": "Gold", "direction": "down"}
+  ]
+}'></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dl-box">
+    <div class="dl-hd">第一期完整产物确认</div>
+    <div class="dl-body">
+      <div class="dl-item"><div class="dl-check"></div><span>流程图 + News Agent 角色卡（第1节）</span></div>
+      <div class="dl-item"><div class="dl-check"></div><span>News Agent 四层 Prompt（第2节）</span></div>
+      <div class="dl-item"><div class="dl-check"></div><span>Context 设计文档（第3节）</span></div>
+      <div class="dl-item"><div class="dl-check"></div><span>fetch_news.py + news_agent.py 能运行（第4节）</span></div>
+      <div class="dl-item"><div class="dl-check"></div><span>网页产品——浏览器打开，刷新按钮可用（第5节）</span></div>
+      <div class="dl-item"><div class="dl-check"></div><span>JSON 翻译练习（第5节）</span></div>
+    </div>
+  </div>
+
+  <div class="note success">
+    <span class="nlabel">第二期预告</span>
+    第二期：增加 Analyst Agent → 两个 Agent 用 JSON 通信 → 系统自动循环运行 → 网页展示分析建议。<br>
+    <strong>前置：理解 JSON 三个规则。课程群会发 JSON 速查卡。</strong>
+  </div>
+</div><!-- /student -->
+
+</div><!-- /main -->
+<script>
+function showView(n){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));document.getElementById('view-'+n).classList.add('active');event.target.classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
+</script>
+</body>
+</html>

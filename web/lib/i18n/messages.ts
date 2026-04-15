@@ -59,6 +59,21 @@ export const messages = {
       footerBack: "← 返回课程中心",
       prereq: "前置：",
     },
+    financeCourse: {
+      metaTitle: "金融宏观分析 Agent · 课程详情",
+      metaDescription:
+        "五课从流程图与 Prompt 到 Trae 跑通 AP News + Claude，再到可刷新网页产品",
+      badge: "5 课 · 金融实战",
+      title: "金融宏观分析 Agent 实战",
+      description:
+        "面向金融信息整理场景：掌握节点类型与四层 Prompt、Context 与项目骨架、Vibe Coding 生成抓取与摘要脚本，最后用 Trae 将流水线产品化为网页。每课约 100 分钟，讲义与陪跑材料对齐，中英文并排维护。",
+      statLessons: "课程",
+      statBlocks: "课堂环节",
+      statDeliverables: "产物节点",
+      statTotal: "总时长",
+      footerBack: "← 返回课程中心",
+      prereq: "前置：",
+    },
     promptCourse: {
       metaTitle: "Claude Prompt Engineering · 课程详情",
       metaDescription: "从随意写提示词到系统化设计，10 章独立成章的实战课程",
@@ -234,6 +249,21 @@ export const messages = {
       statLessons: "Lessons",
       statQuiz: "Quiz items",
       statLabs: "Code labs",
+      statTotal: "Total time",
+      footerBack: "← Back to course hub",
+      prereq: "Prereqs: ",
+    },
+    financeCourse: {
+      metaTitle: "Macro finance agent · Course overview",
+      metaDescription:
+        "Five lessons from flowcharts and prompts to Trae-shipped AP News + Claude, then a refreshable web UI.",
+      badge: "5 lessons · Finance lab",
+      title: "Macro analysis agent in practice",
+      description:
+        "Finance-flavored sprint: node types, four-layer prompts, context design, Trae vibe coding for fetch + Claude summaries, and a Flask-style web shell you can refresh. ~100 minutes per lesson; Chinese and English manuscripts stay in sync with the cohort materials.",
+      statLessons: "Lessons",
+      statBlocks: "In-class blocks",
+      statDeliverables: "Deliverables",
       statTotal: "Total time",
       footerBack: "← Back to course hub",
       prereq: "Prereqs: ",
